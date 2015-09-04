@@ -12,14 +12,14 @@
 #hmRLiv:v1_00/110727
 #	バージョン管理開始
 ##############################
-hmRLib.Version="hmRLib_v1_02"
+hmRLib.Version="hmRLib"
 
-source(paste(hmRLib.Version,"functional.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"bind.R",sep="/"))
-source(paste(hmRLib.Version,"virtual_differential.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"biology.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"graphics.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"numeric.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"utility.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"arguments.R",sep="/"),chdir=TRUE,encoding="UTF-8")
-source(paste(hmRLib.Version,"adaptive_dynamics.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("functional.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("bind.R",sep="/"))
+source(paste("virtual_differential.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("biology.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("graphics.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("numeric.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("utility.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("arguments.R",sep="/"),chdir=TRUE,encoding="UTF-8")
+source(paste("adaptive_dynamics.R",sep="/"),chdir=TRUE,encoding="UTF-8")
