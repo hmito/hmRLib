@@ -1,0 +1,67 @@
+##############################
+#virtual_differential.R v1_01
+#v1_01
+#	virtual_differential_1st-4thを追加
+#v1_00
+#	疑似微分関数群追加
+##############################
+virtual_differential_1st=function(func,step=0.00001){
+	return(function(x,...){return((func(x+step/2,...)-func(x-step/2,...))/step)})
+}
+virtual_differential_2nd=function(func,step=0.00001){
+	return(function(x,y,...){return((func(x,y+step/2,...)-func(x,y-step/2,...))/step)})
+}
+virtual_differential_3rd=function(func,step=0.00001){
+	return(function(x,y,z,...){return((func(x,y,z+step/2,...)-func(x,y,z-step/2,...))/step)})
+}
+virtual_differential_4th=function(func,step=0.00001){
+	return(function(x,y,z,w,...){return((func(x,y,z,w+step/2,...)-func(x,y,z,w-step/2,...))/step)})
+}
+virtual_differential=function(func,step=0.00001){
+	return(function(x){return((func(x+step/2)-func(x-step/2))/step)})
+}
+virtual_differential2_1st=function(func,step=0.00001){
+	return(function(x,y){return((func(x+step/2,y)-func(x-step/2,y))/step)})
+}
+virtual_differential2_2nd=function(func,step=0.00001){
+	return(function(x,y){return((func(x,y+step/2)-func(x,y-step/2))/step)})
+}
+virtual_differential3_1st=function(func,step=0.00001){
+	return(function(x,y,z){return((func(x+step/2,y,z)-func(x-step/2,y,z))/step)})
+}
+virtual_differential3_2nd=function(func,step=0.00001){
+	return(function(x,y,z){return((func(x,y+step/2,z)-func(x,y-step/2,z))/step)})
+}
+virtual_differential3_3rd=function(func,step=0.00001){
+	return(function(x,y,z){return((func(x,y,z+step/2)-func(x,y,z-step/2))/step)})
+}
+virtual_2nd_differential_1st=function(func,step=0.00001){
+	return(function(x,...){return(2/step*((2*func(x+step/2,...)+2*func(x-step/2,...)-4*func(x,...))/step))})
+}
+virtual_2nd_differential_2nd=function(func,step=0.00001){
+	return(function(x,y,...){return(2/step*((2*func(x,y+step/2,...)+2*func(x,y-step/2,...)-4*func(x,y,...))/step))})
+}
+virtual_2nd_differential_3rd=function(func,step=0.00001){
+	return(function(x,y,z,...){return(2/step*((2*func(x,y,z+step/2,...)+2*func(x,y,z-step/2,...)-4*func(x,y,z,...))/step))})
+}
+virtual_2nd_differential_4th=function(func,step=0.00001){
+	return(function(x,y,z,w,...){return(2/step*((2*func(x,y,z,w+step/2,...)+2*func(x,y,z,w-step/2,...)-4*func(x,y,z,w,...))/step))})
+}
+virtual_2nd_differential=function(func,step=0.00001){
+	return(function(x){return(2/step*((2*func(x+step/2)+2*func(x-step/2)-4*func(x))/step))})
+}
+virtual_2nd_differential2_1st=function(func,step=0.00001){
+	return(function(x,y){return(2/step*((2*func(x+step/2,y)+2*func(x-step/2,y)-4*func(x,y))/step))})
+}
+virtual_2nd_differential2_2nd=function(func,step=0.00001){
+	return(function(x,y){return(2/step*((2*func(x,y+step/2)+2*func(x,y-step/2)-4*func(x,y))/step))})
+}
+virtual_2nd_differential3_1st=function(func,step=0.00001){
+	return(function(x,y,z){return(2/step*((2*func(x+step/2,y,z)+2*func(x-step/2,y,z)-4*func(x,y,z))/step))})
+}
+virtual_2nd_differential3_2nd=function(func,step=0.00001){
+	return(function(x,y,z){return(2/step*((2*func(x,y+step/2,z)+2*func(x,y-step/2,z)-4*func(x,y,z))/step))})
+}
+virtual_2nd_differential3_3rd=function(func,step=0.00001){
+	return(function(x,y,z){return(2/step*((2*func(x,y,z+step/2)+2*func(x,y,z-step/2)-4*func(x,y,z))/step))})
+}

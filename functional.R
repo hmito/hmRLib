@@ -1,0 +1,103 @@
+##############################
+#functional.R v1_00
+#v1_00
+#	logicalシリーズ追加
+#	operatorシリーズ追加
+#	isシリーズ追加
+##############################
+operator_plus=function(f1,f2){
+	return(
+		function(...){f1(...)+f2(...)}
+	)
+}
+operator_minus=function(f1,f2){
+	return(
+		function(...){f1(...)-f2(...)}
+	)
+}
+operator_multiplies=function(f1,f2){
+	return(
+		function(...){f1(...)*f2(...)}
+	)
+}
+operator_divides=function(f1,f2){
+	return(
+		function(...){f1(...)/f2(...)}
+	)
+}
+operator_negate=function(f){
+	return(
+		function(...){-f(...)}
+	)
+}
+is_equal=function(f1,f2){
+	return(
+		function(...){f1(...)==f2(...)}
+	)
+}
+is_not_equal=function(f1,f2){
+	return(
+		function(...){f1(...)!=f2(...)}
+	)
+}
+is_greater_equal=function(f1,f2){
+	return(
+		function(...){f1(...)>=f2(...)}
+	)
+}
+is_greater=function(f1,f2){
+	return(
+		function(...){f1(...)>f2(...)}
+	)
+}
+is_less=function(f1,f2){
+	return(
+		function(...){f1(...)<f2(...)}
+	)
+}
+is_less_equal=function(f){
+	return(
+		function(...){f1(...)<=f2(...)}
+	)
+}
+is_positive=function(f){
+	return(
+		function(...){return(f(...)>0)}
+	)
+}
+is_positive_zero=function(f){
+	return(
+		function(...){return(f(...)>=0)}
+	)
+}
+is_negative=function(f){
+	return(
+		function(...){return(f(...)<0)}
+	)
+}
+is_negative_zero=function(f){
+	return(
+		function(...){return(f(...)<=0)}
+	)
+}
+logical_not=function(f){
+	return(
+		function(...){return(!f(...))}
+	)
+}
+logical_and=function(f1,f2){
+	return(
+		function(...){return(f1(...)&f2(...))}
+	)
+}
+logical_or=function(f1,f2){
+	return(
+		function(...){return(f1(...)|f2(...))}
+	)
+}
+square_of=function(f){
+	return(
+		function(...){return(f(...)*f(...))}
+	)
+}
+
