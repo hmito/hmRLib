@@ -23,7 +23,7 @@
 #	border
 #	projecting_split
 ##############################
-source("utility.R",TRUE)
+
 #small_step法による高速＆低精度解確定関数
 solve.small_step=function(func,range,sepnum=10001){
 	xseq=seq(range[1],range[2],length=sepnum)
