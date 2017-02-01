@@ -42,3 +42,20 @@ triangle_vectormap = function(x, y, vx, vy, xlab="", ylab="", zlab="", vlim = NA
 	pos = ex + ey + 19*ez/20+(-ex+ey)/30
 	text(pos[1],pos[2],"1")
 }
+to_triangle=function(x,y){
+	ex = c(1,0)
+	ey = c(cos(acos(-1)*120/180),sin(acos(-1)*120/180))
+	ez = c(cos(acos(-1)*240/180),sin(acos(-1)*240/180))
+	pos1 = x*ex[1] + y*(ex[1]+ey[1])
+	pos2 = x*ex[2] + y*(ex[2]+ey[2])
+	
+	return(list(tx=pos1,ty=pos2))
+}
+triangle_points = function(x,y,...){
+	t = to_triangle(x,y)
+	points(t$tx,t$ty,...)
+}
+triangle_lines = function(x,y,...){
+	t = to_triangle(x,y)
+	lines(t$tx,t$ty,...)
+}
