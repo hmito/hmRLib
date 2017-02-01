@@ -12,12 +12,24 @@
 #	seq.hist
 
 ##############################
-	
-#行列を関数から生成
+
+#' matrix_from_function
+#' @description Create matrix from function
+#' @param f using function with two arguments
+#' @param x first argument vectors
+#' @param y second argument vectors
+#' @return matrix whose elements are obtained from f with possible all combination of x and y
+#' @examples
+#' x=0:3
+#' y=0:2
+#' matrix_from_function(function(x,y){return(x+y)},x,y)
+#' #((0,1,2,3),(1,2,3,4),(2,3,4,5)
 matrix_from_function=function(f,x,y,...){
 	return(matrix(f(rep(x,times=length(y)),rep(y,each=length(x)),...),length(x),length(y)))
 }
-#行列を関数から生成
+
+#' matrix_from_virtual_function
+#' @description Create matrix from function without vector argument support.
 matrix_from_virtual_function=function(f,x,y,...){
 	ans=matrix(0,length(x),length(y))
 	for(dx in 1:length(x)){
