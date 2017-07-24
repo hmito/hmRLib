@@ -1,7 +1,7 @@
 Package: hmRLib
 Type: Package
 Title: Various helper functions for numerical analysis using R. 
-Version: 0.0.1
+Version: 0.0.2
 Author: Koichi Ito
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
