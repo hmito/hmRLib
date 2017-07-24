@@ -36,3 +36,32 @@ cold.colors=function (n, val.white=0.2,rate.white=0.4) {
 green.colors=function (n, val.white=0.2,rate.white=0.5,rate.dark=0.5) {
 	hsv(seq(1/6,2/6,length=n),c(seq(val.white,1.0,length=round(n*rate.white)),rep(1.0,length=n-round(n*rate.white))),seq(1.0,rate.dark,length=n))
 }
+
+#' CUD v3 color palet as the color universal design
+#' @description CUD v3 is the color palet for the color universal design, i.e., considring the accessibility for color blinders.
+#' @return List of colors
+#' @export
+cud.colorset=function(){
+	list(
+		red="#ff2800",
+		yellow="#faf500",
+		green="#35a16b",
+		blue="#0041ff",
+		skyblue="#66ccff",
+		pink="#ff99a0",
+		orange="#ff9900",
+		purple="#9a0079",
+		brown="#663300",
+		light_red="#ffd1d1",
+		light_yellow="#ffff99",
+		light_yellowgreen="#cbf266",
+		light_skyblue="#b4ebfa",
+		light_brown="#edc58f",
+		light_green="#87e7b0",
+		light_purple="#c7b2de",
+		white="#ffffff",
+		lightgrey="#c8c8cb",
+		grey="#7f878f",
+		black="#000000"
+	)
+}

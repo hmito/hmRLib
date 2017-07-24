@@ -2,6 +2,7 @@
 
 S3method(seq,na)
 export(cold.colors)
+export(cud.colorset)
 export(green.colors)
 export(matrix_from_func)
 export(matrix_from_func.nonseqarg)
