@@ -20,7 +20,7 @@ matrix whose elements are obtained from f with possible all combination of x and
 #' @examples
 x=0:3
 y=0:2
-matrix_from_function(function(x,y){return(x+y)},x,y)
+matrix_from_func.nonseqarg(x,y,function(x,y){return(x+y)})
 #((0,1,2,3),(1,2,3,4),(2,3,4,5)
 }
 \description{
