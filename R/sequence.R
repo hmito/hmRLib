@@ -8,8 +8,8 @@
 #' @examples
 #' x=0:3
 #' y=0:2
-#' matrix_from_function(function(x,y){return(x+y)},x,y)
-#' #((0,1,2,3),(1,2,3,4),(2,3,4,5)
+#' matrix_from_func(x,y,function(x,y){return(x+y)})
+#' #((0,1,2,3),(1,2,3,4),(2,3,4,5))
 #' @export
 matrix_from_func=function(x,y,f,...){
 	return(matrix(f(rep(x,times=length(y)),rep(y,each=length(x)),...),length(x),length(y)))
@@ -25,7 +25,7 @@ matrix_from_func=function(x,y,f,...){
 #' #' @examples
 #' x=0:3
 #' y=0:2
-#' matrix_from_function(function(x,y){return(x+y)},x,y)
+#' matrix_from_func.nonseqarg(x,y,function(x,y){return(x+y)})
 #' #((0,1,2,3),(1,2,3,4),(2,3,4,5)
 #' @export
 matrix_from_func.nonseqarg=function(x,y,f,...){
