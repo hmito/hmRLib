@@ -9,7 +9,7 @@ triangle_plot = function(xlab="", ylab="", zlab=""){
 	ex = c(1,0)
 	ey = c(cos(acos(-1)*120/180),sin(acos(-1)*120/180))
 	ez = c(cos(acos(-1)*240/180),sin(acos(-1)*240/180))
-	
+
 	par(mai=c(0,0,0,0))
 	plot(0,0,xlim=c(-0.1,1.1),ylim=c(-0.2,1.0),type = "n", axes=FALSE, xlab="", ylab="")
 	triangle_lines(c(0,1,0,0),c(0,0,1,0))
@@ -27,7 +27,7 @@ triangle_plot = function(xlab="", ylab="", zlab=""){
 	triangle_text(1.05,0.00, "  0%", adj=0.0, srt = 0)
 	triangle_text(0.55,0.50, " 50%", adj=0.0, srt = 0)
 	triangle_text(0.05,1.00, "100%", adj=0.0, srt = 0)
-	
+
 	triangle_lines(c(0,0-0.03),c(1.0,1.0+0.03))
 	triangle_lines(c(0,0-0.03),c(0.5,0.5+0.03))
 	triangle_lines(c(0,0-0.03),c(0.0,0.0+0.03))
@@ -46,10 +46,17 @@ triangle_plot = function(xlab="", ylab="", zlab=""){
 #' @param y position of second element. Note that the third element is not required because z is always 1-x-y.
 #' @param vx vector/allow of first element.
 #' @param vy vector/allow of second element. Note that the third element is not required because z is always 1-x-y.
+#' @param xlab label of x-axis
+#' @param ylab label of y-axis
+#' @param zlab label of z-axis
+#' @param vlim maximum length of vector
+#' @param arrow.len length of the arrow
+#' @param arrow.headlen head length of the arrow
+#' @param col color of the vector
 #' @export
 triangle_vectormap = function(x, y, vx, vy, xlab="", ylab="", zlab="", vlim = NA, arrow.len=0.05, arrow.headlen=0.10, col = rev(gray.colors(20))){
 	triangle_plot(xlab, ylab, zlab)
-	
+
 	pos1 = x*ex[1] + y*(ex[1]+ey[1])
 	pos2 = x*ex[2] + y*(ex[2]+ey[2])
 	vec1 = vx*ex[1]+vy*(ex[1]+ey[1])
@@ -59,7 +66,7 @@ triangle_vectormap = function(x, y, vx, vy, xlab="", ylab="", zlab="", vlim = NA
 		vlim = c(0,max(vlen))
 	}
 	alen =arrow.len
-	
+
 	vcolno = trunc((vlen-vlim[1])/vlim[2]*length(col))+1
 	vcolno[vcolno<1]=1
 	vcolno[vcolno>length(col)]=length(col)
@@ -76,7 +83,7 @@ to_triangle=function(x,y){
 	ez = c(cos(acos(-1)*240/180),sin(acos(-1)*240/180))
 	pos1 = x*ex[1] + y*(ex[1]+ey[1])
 	pos2 = x*ex[2] + y*(ex[2]+ey[2])
-	
+
 	return(list(tx=pos1,ty=pos2))
 }
 
@@ -104,7 +111,6 @@ triangle_lines = function(x,y,...){
 #' @param y position of second element. Note that the third element is not required because z is always 1-x-y.
 #' @param ... Other parameters for text function.
 #' @export
-
 triangle_text = function(x,y,...){
 	t = to_triangle(x,y)
 	text(t$tx,t$ty,...)

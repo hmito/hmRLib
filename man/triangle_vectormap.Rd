@@ -16,6 +16,20 @@ triangle_vectormap(x, y, vx, vy, xlab = "", ylab = "", zlab = "",
 \item{vx}{vector/allow of first element.}
 
 \item{vy}{vector/allow of second element. Note that the third element is not required because z is always 1-x-y.}
+
+\item{xlab}{label of x-axis}
+
+\item{ylab}{label of y-axis}
+
+\item{zlab}{label of z-axis}
+
+\item{vlim}{maximum length of vector}
+
+\item{arrow.len}{length of the arrow}
+
+\item{arrow.headlen}{head length of the arrow}
+
+\item{col}{color of the vector}
 }
 \description{
 Plot triangle vector map.

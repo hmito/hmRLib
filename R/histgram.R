@@ -9,9 +9,9 @@
 #' x = c(1,2,3)
 #' x.ax = c(0,1,2,3)
 #' y.ax = c(0,0.5,1,1.5,2,2.5)
-#' hist.axis_translate(x,x.ax,y.ax)
+#' hist_axis_translate(x,x.ax,y.ax)
 #' # c(0.5,0.5,1,1,1.5)
-hist.axis_translate=function(src.hist,src.ax,trg.ax){
+hist_axis_translate=function(src.hist,src.ax,trg.ax){
 	src.ln = length(src.ax)-1
 	trg.ln = length(trg.ax)-1
 
@@ -30,17 +30,17 @@ hist.axis_translate=function(src.hist,src.ax,trg.ax){
 }
 
 #' Smoothing histgram sequence by using simple moving average method
-#' @decription This function translate the histgram sequence into the smoothing data.
+#' @description This function translate the histgram sequence into the smoothing data.
 #' @param hist.data Histgram sequence
 #' @param width Width of the simple moving average method. width=1 means no smoothing. This value should be an intergral value.
 #' @return Smoothing histgram sequence
-#' @export
 #' @examples
 #' hist.data = c(1,5,7,5,5,4,3,1,0,0,0,4,4,8,5,5,5,5,3,3,3,7,7,8,3,3,1,3,5,0,0,2,3,3,0)
-#' smooth = hist.smoothing(hist.data,3)
+#' smooth = hist_smoothing(hist.data,3)
 #' plot(hist.data,type="b")
 #' lines(1:length(hist.data),smooth,col="red",lwd=2)
-hist.smoothing = function(hist.data,width){
+#' @export
+hist_smoothing = function(hist.data,width){
 	data = c(rep(0,floor((width-1)/2)),hist.data,rep(0,ceiling((width-1)/2)))
 	#	shist = numeric(length(hist.data) - width + 1)
 	shist = numeric(length(hist.data))
@@ -60,16 +60,19 @@ hist.smoothing = function(hist.data,width){
 #' @param max The maximum value of the threshold.
 #' @param n The step of the threshold change.
 #' @return Table of the peaks with lower number, upper number, top number (maximum position within the peak) and frequency of each peaks.
-#' @export
 #' @examples
 #' hist.data = c(1,5,7,5,5,4,3,1,0,0,0,4,4,8,5,5,5,5,3,3,3,7,7,8,3,3,1,3,5,0,0,2,3,3,0)
-#' peaks = hist.find_peaks.minvalue(hist.data,0,6)
+#' peaks = hist_find_peaks.minvalue(hist.data,0,6)
 #' plot(hist.data,type="b",lwd=2)
 #' for(i in 1:nrow(peaks)){
 #' 	segments(peaks$top[i],-1,peaks$top[i],10,col="red")
-#' 	polygon(c(peaks$lower[i],peaks$lower[i],peaks$upper[i],peaks$upper[i]),c(-1,10,10,-1),col=rgb(1,0,0,0.2),border=NA)
+#' 	polygon(
+#' 		c(peaks$lower[i],peaks$lower[i],peaks$upper[i],peaks$upper[i]),c(-1,10,10,-1),
+#' 		col=rgb(1,0,0,0.2),border=NA
+#' 	)
 #' }
-hist.find_peaks.minvalue = function(hist.data,min,max,n=101){
+#' @export
+hist_find_peaks.minvalue = function(hist.data,min,max,n=101){
 	threshold.mx = matrix(rep(seq(min,max,length=n),each=length(hist.data)+2),length(hist.data)+2,n)
 	hist.data.mx = matrix(rep(c(0,hist.data,0),times=n),length(hist.data)+2,n)
 	exist.mx = hist.data.mx>threshold.mx
@@ -116,14 +119,17 @@ hist.find_peaks.minvalue = function(hist.data,min,max,n=101){
 #' @return Table of the peaks with lower number, upper number, top number (maximum position within the peak) and frequency of each peaks.
 #' @examples
 #' hist.data = c(1,5,7,5,5,4,3,1,0,0,0,4,4,8,5,5,5,5,3,3,3,7,7,8,3,3,1,3,5,0,0,2,3,3,0)
-#' peaks = hist.find_peaks.slope(hist.data,0.5)
+#' peaks = hist_find_peaks.slope(hist.data,0.5)
 #' plot(hist.data,type="b",lwd=2)
 #' for(i in 1:nrow(peaks)){
 #' 	segments(peaks$top[i],-1,peaks$top[i],10,col="red")
-#' 	polygon(c(peaks$lower[i],peaks$lower[i],peaks$upper[i],peaks$upper[i]),c(-1,10,10,-1),col=rgb(1,0,0,0.2),border=NA)
+#' 	polygon(
+#' 		c(peaks$lower[i],peaks$lower[i],peaks$upper[i],peaks$upper[i]),c(-1,10,10,-1),
+#' 		col=rgb(1,0,0,0.2),border=NA
+#' 	)
 #' }
 #' @export
-hist.find_peaks.slope = function(hist.data, min.ratio = 0.3, min.value = NA, interval = 1){
+hist_find_peaks.slope = function(hist.data, min.ratio = 0.3, min.value = NA, interval = 1){
 	if(is.na(min.ratio)){
 		min.ratio = 1.0
 	}

@@ -19,7 +19,19 @@ vector_field.color(dxf, dyf, colrate, arrow.length = NA,
 
 \item{arrow.sublength}{Basic sub length of the arrow.}
 
+\item{xyrate}{relative length of x and y values.}
+
+\item{xlim}{range of x-axis}
+
+\item{ylim}{range of y-axis}
+
 \item{num}{Density of the arrows.}
+
+\item{col}{color of the vector}
+
+\item{limit}{limit function with two argument x,y. If limit(x,y) return true, the arrow is not drown.}
+
+\item{add}{boolian: whether add existign plot space or not.}
 
 \item{...}{same with the plot function.}
 }

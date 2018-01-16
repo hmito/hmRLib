@@ -46,10 +46,10 @@ remove.na=function(seq){seq[!is.na(seq)]}
 #' @param num Length of sequence.
 #' @return Sequence whose all elements are NA
 #' @examples
-#' seq.na(4)
+#' seq_na(4)
 #' #(NA,NA,NA,NA)
 #' @export
-seq.na=function(num){
+seq_na=function(num){
 	ans=numeric(num)
 	is.na(ans)=TRUE
 	return(ans)
@@ -62,14 +62,14 @@ matrix_of_subseq=function(mx,my,x,y,z){
 	return(matrix(mapply(select_functor,rep(mx,times=length(my)),rep(my,each=length(mx))),nrow=length(mx),ncol=length(my)))
 }
 
-matrix.na=function(nx,ny){
+matrix_na=function(nx,ny){
 	ans=matrix(0,nx,ny)
 	is.na(ans)=TRUE
 	return(ans)
 }
 
 
-seq.hist=function(Vec,SepSeq){
+seq_hist=function(Vec,SepSeq){
 	Ans=numeric(length(SepSeq-1))
 	for(i in 2:length(SepSeq)){
 		if(i==length(SepSeq))Ans[i-1]=sum(Vec>=SepSeq[i-1] & Vec<=SepSeq[i])

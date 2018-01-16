@@ -9,17 +9,3 @@ run_as_rscript = function(fn,...){
 	}
 }
 
-#' Read package after install if it is required
-#' @decription Read package from CRAN like "library" function, but if it is not found in local try to install it.
-#' @param Name Name of the package
-#' @export
-try_library = function(Names){
-	for(Name in Names){
-		if(!require(Name)){
-			install.packages(Name)
-			if(!require(Name)){
-				stop(paste("fail to install package\"",Name,"\""))
-			}
-		}
-	}
-}
