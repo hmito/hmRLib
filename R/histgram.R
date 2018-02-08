@@ -84,8 +84,7 @@ hist_find_peaks.minvalue = function(hist.data,min,max,n=101){
 	threshold.no = min((1:n)[result==peak.num])
 	exist.seq = exist.mx[,threshold.no]
 
-	peaks = data.frame("lower"=NA,"upper"=NA,"top"=NA,"freq"=NA)
-
+	peaks = data.frame("lower"=NULL,"upper"=NULL,"top"=NULL,"freq"=NULL)
 	if(peak.num!=0){
 		boundary = 1
 
@@ -107,7 +106,7 @@ hist_find_peaks.minvalue = function(hist.data,min,max,n=101){
 		}
 	}
 
-	return(peaks[-1,])
+	return(peaks)
 }
 
 #' Find peaks in given histgram by checking the valley of the data
@@ -155,17 +154,16 @@ hist_find_peaks.slope = function(hist.data, min.ratio = 0.3, min.value = NA, int
 
 	#list up peaks based on boundaries
 	#	peaks = data.frame("lower"=NA,"upper"=NA,"top"=NA,"freq"=NA)
-	peaks = data.frame("lower"=NA,"upper"=NA,"top"=NA,"freq"=NA)
+		peaks = data.frame("lower"=NULL,"upper"=NULL,"top"=NULL,"freq"=NULL)
 	for(pos in 2:length(boundaries)){
 		range = (boundaries[pos-1]+1):boundaries[pos]
 		this.lower = min(range[hist.data[range]>0])-1
 		this.upper = max(range[hist.data[range]>0])-1
 		this.top = range[order(hist.data[range],decreasing = TRUE)[1]]-1
 		this.freq = sum(hist.data[range])
-
+		
 		peaks = rbind(peaks,data.frame("lower"=this.lower,"upper"=this.upper,"top"=this.top,"freq"=this.freq))
 	}
-	peaks = peaks[-1,]
 
 	#marge peaks based on the minratio
 	while(nrow(peaks)>1){
