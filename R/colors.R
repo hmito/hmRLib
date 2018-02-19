@@ -4,6 +4,7 @@
 #' @param low The hue at the sides of the color set.
 #' @param high The hue at the center of the color set.
 #' @return Created color set.
+#' @importFrom grDevices rgb
 #' @export
 rb.colors=function(n,low=0.25,high=0.90){
 	if(n%%2==1){
@@ -20,6 +21,7 @@ rb.colors=function(n,low=0.25,high=0.90){
 #' @param val.white Strength of white color.
 #' @param rate.white Changing rate of the white color
 #' @return Created color set.
+#' @importFrom grDevices hsv
 #' @export
 cold.colors=function (n, val.white=0.2,rate.white=0.4) {
 	hsv(seq(3/6,4/6,length=n),c(seq(val.white,1.0,length=round(n*rate.white)),rep(1.0,length=n-round(n*rate.white))),1)

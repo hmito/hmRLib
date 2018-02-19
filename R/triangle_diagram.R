@@ -2,6 +2,7 @@
 #' @param xlab label of x axis.
 #' @param ylab label of y axis.
 #' @param zlab label of z axis.
+#' @import graphics
 #' @export
 triangle_plot = function(xlab="", ylab="", zlab=""){
 #	par.old <- par(no.readonly=T)
@@ -53,9 +54,15 @@ triangle_plot = function(xlab="", ylab="", zlab=""){
 #' @param arrow.len length of the arrow
 #' @param arrow.headlen head length of the arrow
 #' @param col color of the vector
+#' @import graphics
+#' @importFrom grDevices gray.colors
 #' @export
 triangle_vectormap = function(x, y, vx, vy, xlab="", ylab="", zlab="", vlim = NA, arrow.len=0.05, arrow.headlen=0.10, col = rev(gray.colors(20))){
 	triangle_plot(xlab, ylab, zlab)
+
+	ex = c(1,0)
+	ey = c(cos(acos(-1)*120/180),sin(acos(-1)*120/180))
+	ez = c(cos(acos(-1)*240/180),sin(acos(-1)*240/180))
 
 	pos1 = x*ex[1] + y*(ex[1]+ey[1])
 	pos2 = x*ex[2] + y*(ex[2]+ey[2])
@@ -91,6 +98,7 @@ to_triangle=function(x,y){
 #' @param x position of first element.
 #' @param y position of second element. Note that the third element is not required because z is always 1-x-y.
 #' @param ... Other parameters for points function.
+#' @import graphics
 #' @export
 triangle_points = function(x,y,...){
 	t = to_triangle(x,y)
@@ -101,6 +109,7 @@ triangle_points = function(x,y,...){
 #' @param x position of first element.
 #' @param y position of second element. Note that the third element is not required because z is always 1-x-y.
 #' @param ... Other parameters for lines function.
+#' @import graphics
 #' @export
 triangle_lines = function(x,y,...){
 	t = to_triangle(x,y)
@@ -110,6 +119,7 @@ triangle_lines = function(x,y,...){
 #' @param x position of first element.
 #' @param y position of second element. Note that the third element is not required because z is always 1-x-y.
 #' @param ... Other parameters for text function.
+#' @import graphics
 #' @export
 triangle_text = function(x,y,...){
 	t = to_triangle(x,y)

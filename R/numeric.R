@@ -2,12 +2,12 @@
 #' @description This function returns roots of a focal function by checking the sign change in each step.
 #' @param func the function for which the root is sought.
 #' @param step a vector containing the step values
-#' @param ... Additional argument for "func"
+#' @param ... optional arguments to be passed to "func"
 #' @return data.frame with two col, "lower" and "upper" which are the range of the solutions. root
 #' @export
 #' @examples
 #' f = function(x,y){return(x*x-y*x)}
-#' ans = solve_small_step(f, seq(-2,2,length=41),y=1.333)
+#' ans = small_step_root(f, seq(-2,2,length=41),y=1.333)
 #' # ans == data.frame("lower"=c(0.0,1.3),"upper"=c(0.0,1.4))
 small_step_root=function(func,step,...){
 	fval=func(step,...)
@@ -18,10 +18,12 @@ small_step_root=function(func,step,...){
 
 
 #' Find root of a function using combination of small_step method and newton method.
-#' @description This function returns roots of a focal function by checking the sign change in each step.
+#' @description Returns roots of a focal function by checking the sign change in each step.
 #' @param func the function for which the root is sought.
 #' @param step a vector containing the step values
+#' @param ... optional arguments to be passed to "func"
 #' @return a vector which containing root values
+#' @importFrom stats uniroot
 #' @export
 #' @examples
 #' f = function(x,y){return(x*x-y*x)}
@@ -46,30 +48,28 @@ newton_root=function(func,step,...){
 }
 
 
-#' Find border of the
-border.small_step=function(x,y,z){
-	#??????????????????????????????
+#' Find root points on x-y plane from logical matrix and x,y axes.
+#' @description Return vectors which are sequence of root points on the given grid (x,y).
+#' @param x sequence of x-axis
+#' @param y sequence oy y-axis
+#' @param z logical matrix of function values whose root are searched
+#' @return list(x,y). x and y are sequence of points.
+#' @note nrow(z) and ncol(z) should be equal to length(x) and length(y), respectively.
+#' @export
+small_step_planeroot_from_matrix=function(x,y,z){
 	if(is.matrix(z)==FALSE){
 		return(NA)
 	}
 
-	#????????????????????????????????????
 	xmax=nrow(z)
 	ymax=ncol(z)
 
-	#?????????????????????
-	#	xy????????????????????????????????????????????????
-	#		(-,-)?????????1,(+,-)?????????2,(+,+)?????????4,(-,+)?????????8
-	#		????????????????????????????????????????????????0???15??????????????????????????????????????????????????????
-	#	?????????/??????0???15????????????????????????????????????4????????????????????????????????????????????????????????????????????????
 	pos=matrix(0,xmax-1,ymax-1)
 	pos=1*z[-xmax,-ymax]+2*z[-1,-ymax]+4*z[-1,-1]+8*z[-xmax,-1]
 	pos[is.na(pos)]=0
 	pos[pos>7]=15-pos[pos>7]
 
-	#??????????????????
 	search=function(dx,dy,ans){
-		#????????????????????????
 		pre_dx=0
 		pre_dy=0
 
@@ -95,9 +95,7 @@ border.small_step=function(x,y,z){
 				}else{
 					return(ans)
 				}
-				#?????????(-,-)?????????????????????????????????
 			}else if(ans[["pos"]][dx,dy]==1){
-				#??????
 				if(pre_dx==-1){
 					ans[["x"]]=c(ans[["x"]],(x[dx]+x[dx+1])/2)
 					ans[["y"]]=c(ans[["y"]],y[dy])
@@ -299,19 +297,42 @@ border.small_step=function(x,y,z){
 		pos=ans[["pos"]]
 	}
 
-	return(list(ansx,ansy))
+	return(list(x=ansx,y=ansy))
 }
 
-#????????????????????????????????????????????????
-border.uniroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001){
-	#xy????????????????????????????????????????????????
-	#(-,-)?????????1,(+,-)?????????2,(+,+)?????????4,(-,-)?????????8
-	#????????????????????????????????????????????????0???15??????????????????????????????????????????????????????
-	#?????????/??????0???15????????????????????????????????????4????????????????????????????????????????????????????????????????????????
 
+#' Find root points on x-y plane by using small step method
+#' @description Return vectors which are sequence of root points on the given grid (x,y).
+#' @param func Function  whose root points are searched
+#' @param xlim min and max value of x-axis.
+#' @param ylim min and max value of y-axis.
+#' @param n step num for small_step search
+#' @param ... optional arguments to be passed to "func"
+#' @return list(x,y). x and y are sequence of points.
+#' @export
+small_step_planeroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001,...){
 	x=seq(xlim[1],xlim[2],length=n)
 	y=seq(ylim[1],ylim[2],length=n)
-	z=outer(x,y,func)
+	z=outer(x,y,func,...)
+	z=(z>0)
+	return(small_step_planeroot_from_matrix(x,y,z))
+}
+
+
+#' Find root points on x-y plane by using newton method
+#' @description Return vectors which are sequence of root points on the given grid (x,y).
+#' @param func Function  whose root points are searched
+#' @param xlim min and max value of x-axis.
+#' @param ylim min and max value of y-axis.
+#' @param n step num for small_step search
+#' @param ... optional arguments to be passed to "func"
+#' @return list(x,y). x and y are sequence of points.
+#' @importFrom stats uniroot
+#' @export
+newton_planeroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001,...){
+	x=seq(xlim[1],xlim[2],length=n)
+	y=seq(ylim[1],ylim[2],length=n)
+	z=outer(x,y,func,...)
 	z=(z>0)
 	pos=matrix(0,nrow(z)-1,ncol(z)-1)
 
@@ -321,7 +342,7 @@ border.uniroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001){
 			if(f(x1)>0)return(x1)
 			else return (x2)
 		}
-		return(uniroot(f,c(x1,x2))[["root"]])
+		return(uniroot(f,c(x1,x2),...)[["root"]])
 	}
 	yfunc=function(x,y1,y2){
 		f = function(y){func(x,y)}
@@ -329,7 +350,7 @@ border.uniroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001){
 			if(f(y1)>0)return(y1)
 			else return (y2)
 		}
-		return(uniroot(f,c(y1,y2))[["root"]])
+		return(uniroot(f,c(y1,y2),...)[["root"]])
 	}
 
 	pos=1*z[-nrow(z),-ncol(z)]+2*z[-1,-ncol(z)]+4*z[-1,-1]+8*z[-nrow(z),-1]
@@ -567,75 +588,3 @@ border.uniroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001){
 	return(list(ansx,ansy))
 }
 
-#線分p1-p2とp3-p4が交差しているかの判定
-is.cross_segments=function(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y,p4.x,p4.y){
-	#x座標によるチェック
-	XCheck=rep(TRUE,length=length(p1.x))
-	XCheck=!(((p1.x >= p2.x) & ((p1.x < p3.x & p1.x < p4.x) | (p2.x > p3.x & p2.x > p4.x)))|((p1.x < p2.x) & ((p2.x < p3.x & p2.x < p4.x) | (p1.x > p3.x & p1.x > p4.x))))
-
-	#y座標によるチェック
-	YCheck=rep(TRUE,length=length(p1.y))
-	YCheck=!(((p1.y >= p2.y) & ((p1.y < p3.y & p1.y < p4.y) | (p2.y > p3.y & p2.y > p4.y)))|((p1.y < p2.y) & ((p2.y < p3.y & p2.y < p4.y) | (p1.y > p3.y & p1.y > p4.y))))
-
-	#交差条件チェック
-	Cross1Check=rep(TRUE,length=length(p1.x))
-	Cross1Check=!(((p1.x - p2.x) * (p3.y - p1.y) + (p1.y - p2.y) * (p1.x - p3.x)) *((p1.x - p2.x) * (p4.y - p1.y) + (p1.y - p2.y) * (p1.x - p4.x)) > 0)
-
-	Cross2Check=rep(TRUE,length=length(p1.x))
-	Cross2Check=!(((p3.x - p4.x) * (p1.y - p3.y) + (p3.y - p4.y) * (p3.x - p1.x)) *((p3.x - p4.x) * (p2.y - p3.y) + (p3.y - p4.y) * (p3.x - p2.x)) > 0)
-
-	return(XCheck&YCheck&Cross1Check&Cross2Check)
-}
-
-#直線p1-p2とp3-p4の交点
-get.cross_segments_point=function(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y,p4.x,p4.y){
-	r=((p4.y-p3.y)*(p3.x-p1.x)-(p4.x-p3.x)*(p3.y-p1.y))/((p2.x-p1.x)*(p4.y-p3.y)-(p2.y-p1.y)*(p4.x-p3.x))
-	return(c((1-r)*p1.x+r*p2.x,(1-r)*p1.y+r*p2.y))
-}
-#(xylist[1],xylist[2])となるような点配列の中に、(x,y)と同位置となるような点の数
-count.equal_point=function(x,y,xylist){sum(remove.na((xylist[[1]]==x)&(xylist[[2]]==y)))}
-#(seq[1],seq[2])となるような点配列の中に、(xseq,yseq)と同位置となるような点を返す
-search.equal_point=function(xseq1,yseq1,xseq2,yseq2){
-	xseq1.cmp=rep(xseq1,each=length(xseq2))
-	yseq1.cmp=rep(yseq1,each=length(yseq2))
-	xseq2.cmp=rep(xseq2,times=length(xseq1))
-	yseq2.cmp=rep(yseq2,times=length(yseq1))
-	acs=((xseq1.cmp==xseq2.cmp)&(yseq1.cmp==yseq2.cmp))
-	return(list(xseq1.cmp[acs],yseq1.cmp[acs]))
-}
-
-#(seq[1],seq[2])となるような点配列の中に、(xseq,yseq)と同位置となるような点を返す
-search.cross_point=function(xseq1,yseq1,xseq2,yseq2){
-	pos1.x=xseq1[-length(xseq1)]
-	pos1.y=yseq1[-length(yseq1)]
-	pos2.x=xseq1[-1]
-	pos2.y=yseq1[-1]
-	pos3.x=xseq2[-length(xseq2)]
-	pos3.y=yseq2[-length(yseq2)]
-	pos4.x=xseq2[-1]
-	pos4.y=yseq2[-1]
-
-	pos1.x.cmp=rep(pos1.x,each=length(pos3.x))
-	pos1.y.cmp=rep(pos1.y,each=length(pos3.y))
-	pos2.x.cmp=rep(pos2.x,each=length(pos3.x))
-	pos2.y.cmp=rep(pos2.y,each=length(pos3.y))
-	pos3.x.cmp=rep(pos3.x,times=length(pos1.x))
-	pos3.y.cmp=rep(pos3.y,times=length(pos1.y))
-	pos4.x.cmp=rep(pos4.x,times=length(pos1.x))
-	pos4.y.cmp=rep(pos4.y,times=length(pos1.y))
-
-	#  IsCross=mapply(is.cross_segments,pos1.x.cmp,pos1.y.cmp,pos2.x.cmp,pos2.y.cmp,pos3.x.cmp,pos3.y.cmp,pos4.x.cmp,pos4.y.cmp)
-	IsCross=is.cross_segments(pos1.x.cmp,pos1.y.cmp,pos2.x.cmp,pos2.y.cmp,pos3.x.cmp,pos3.y.cmp,pos4.x.cmp,pos4.y.cmp)
-	IsCross[is.na(IsCross)]=FALSE
-
-	ans.x=numeric(0)
-	ans.y=numeric(0)
-
-	for(i in (1:length(pos1.x.cmp))[IsCross]){
-		pair=get.cross_segments_point(pos1.x.cmp[i],pos1.y.cmp[i],pos2.x.cmp[i],pos2.y.cmp[i],pos3.x.cmp[i],pos3.y.cmp[i],pos4.x.cmp[i],pos4.y.cmp[i])
-		ans.x=c(ans.x,pair[[1]])
-		ans.y=c(ans.y,pair[[2]])
-	}
-
-	return(list(ans.x,ans.y))
-}

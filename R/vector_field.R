@@ -10,6 +10,7 @@
 #' @param limit limit function with two argument x,y. If limit(x,y) return true, the arrow is not drown.
 #' @param add boolian: whether add existign plot space or not.
 #' @param ... same with the plot function.
+#' @importFrom graphics arrows
 #' @export
 vector_field=function(dxf,dyf,arrow.length,arrow.sublength,xlim=c(0,1),ylim=c(0,1),num=20,col="black",limit=NULL,add=FALSE,...){
 	x_seq=seq(xlim[1],xlim[2],length=num+1)
@@ -49,6 +50,8 @@ vector_field=function(dxf,dyf,arrow.length,arrow.sublength,xlim=c(0,1),ylim=c(0,
 #' @param limit limit function with two argument x,y. If limit(x,y) return true, the arrow is not drown.
 #' @param add boolian: whether add existign plot space or not.
 #' @param ... same with the plot function.
+#' @importFrom graphics arrows
+#' @importFrom grDevices heat.colors
 #' @export
 vector_field.color=function(dxf,dyf,colrate,arrow.length=NA,arrow.sublength=0.25,xyrate=1.0,xlim=c(0,1),ylim=c(0,1),num=20,col=rev(heat.colors(100)),limit=NULL,add=FALSE,...){
 	if(is.na(arrow.length))arrow.length=0.6
