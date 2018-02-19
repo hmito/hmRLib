@@ -46,52 +46,25 @@ remove.na=function(seq){seq[!is.na(seq)]}
 #' @param num Length of sequence.
 #' @return Sequence whose all elements are NA
 #' @examples
-#' seq_na(4)
+#' seq.na(4)
 #' #(NA,NA,NA,NA)
 #' @export
-seq_na=function(num){
+seq.na=function(num){
 	ans=numeric(num)
 	is.na(ans)=TRUE
 	return(ans)
 }
 
-matrix_of_subseq=function(mx,my,x,y,z){
-	select_functor=function(dx,dy){
-		return(z[x==dx & y==dy])
-	}
-	return(matrix(mapply(select_functor,rep(mx,times=length(my)),rep(my,each=length(mx))),nrow=length(mx),ncol=length(my)))
-}
-
-matrix_na=function(nx,ny){
+#' Create matrix with NA
+#' @param nx Length of row.
+#' @param ny Length of col.
+#' @return Matrix whose all elements are NA
+#' @examples
+#' matrix.na(3,2)
+#' #((NA,NA),(NA,NA),(NA,NA))
+#' @export
+matrix.na=function(nx,ny){
 	ans=matrix(0,nx,ny)
 	is.na(ans)=TRUE
 	return(ans)
-}
-
-
-seq_hist=function(Vec,SepSeq){
-	Ans=numeric(length(SepSeq-1))
-	for(i in 2:length(SepSeq)){
-		if(i==length(SepSeq))Ans[i-1]=sum(Vec>=SepSeq[i-1] & Vec<=SepSeq[i])
-		else Ans[i-1]=sum(Vec>=SepSeq[i-1] & Vec<SepSeq[i])
-	}
-	return(Ans)
-}
-
-seq_of_subseq=function(mx,x,y){
-	select_functor=function(dx){
-		return(y[x==dx])
-	}
-	return(as.vector(apply(as.matrix(mx,1,length(mx)),c(1),select_functor)))
-}
-
-count_equal_point=function(x,y,xylist){sum(remove.na((xylist[[1]]==x)&(xylist[[2]]==y)))}
-
-search_equal_point=function(xseq1,yseq1,xseq2,yseq2){
-	xseq1.cmp=rep(xseq1,each=length(xseq2))
-	yseq1.cmp=rep(yseq1,each=length(yseq2))
-	xseq2.cmp=rep(xseq2,times=length(xseq1))
-	yseq2.cmp=rep(yseq2,times=length(yseq1))
-	acs=((xseq1.cmp==xseq2.cmp)&(yseq1.cmp==yseq2.cmp))
-	return(list(xseq1.cmp[acs],yseq1.cmp[acs]))
 }
