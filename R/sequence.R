@@ -46,10 +46,10 @@ remove.na=function(seq){seq[!is.na(seq)]}
 #' @param num Length of sequence.
 #' @return Sequence whose all elements are NA
 #' @examples
-#' seq.na(4)
+#' seq_na(4)
 #' #(NA,NA,NA,NA)
 #' @export
-seq.na=function(num){
+seq_na=function(num){
 	ans=numeric(num)
 	is.na(ans)=TRUE
 	return(ans)
@@ -60,10 +60,10 @@ seq.na=function(num){
 #' @param ny Length of col.
 #' @return Matrix whose all elements are NA
 #' @examples
-#' matrix.na(3,2)
+#' matrix_na(3,2)
 #' #((NA,NA),(NA,NA),(NA,NA))
 #' @export
-matrix.na=function(nx,ny){
+matrix_na=function(nx,ny){
 	ans=matrix(0,nx,ny)
 	is.na(ans)=TRUE
 	return(ans)
