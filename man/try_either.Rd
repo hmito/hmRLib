@@ -4,7 +4,7 @@
 \alias{try_either}
 \title{Try excute function which might throw exception and return alternative value if it has been thrown.}
 \usage{
-try_either(expr, alt_value = NULL, silent = FALSE, catch = NULL)
+try_either(expr, alt_value = NULL, silent = TRUE, catch = NULL)
 }
 \arguments{
 \item{expr}{Function which should be excuted.}

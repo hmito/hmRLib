@@ -4,7 +4,7 @@
 \alias{try_catch}
 \title{Try excute function which might throw exception.}
 \usage{
-try_catch(expr, silent = FALSE)
+try_catch(expr, silent = TRUE)
 }
 \arguments{
 \item{expr}{Function which should be excuted.}
