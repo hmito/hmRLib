@@ -5,6 +5,21 @@
 #' @export
 plot.null=function(...){plot(0,0,type="n",...)}
 
+#' Add polygon on image
+#' @description  Drow polygon on image where z==true
+#' @param x vector of x-axis
+#' @param y vector of y-axis
+#' @param z matrix where polygon is drawn if TRUE
+#' @param ... arguments for polygon function
+#' @export
+image_polygon=function(x,y,z,...){
+	ez = matrix(FALSE,length(x)+2,length(y)+2)
+	ez[1+(1:length(x)),1+(1:length(y))]=z
+	s = hmRLib::small_step_planeroot_from_matrix(
+		c(2*x[1] - x[2] ,x, 2*x[length(x)] - x[length(x)-1]),
+		c(2*y[1] - y[2] ,y, 2*y[length(y)] - y[length(y)-1]),ez)
+	polygon(s$x,s$y,...)
+}
 
 #陰関数を疑似的に描画する
 #' @importFrom grDevices extendrange
