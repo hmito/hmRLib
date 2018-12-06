@@ -78,7 +78,7 @@ runge_kutta_heuneuler_adaptive_step = function(dxdt, x,t,dt, abserr, relerr){
 	while(T){
 		ans = runge_kutta_heuneuler_step(dxdt,x,t,dt)
 
-		err  = max(abs(ans$error)/(abserr+relerr*(abs(x)+abs(ans$x-x)*dt)))
+		err  = max(abs(ans$error)/(abserr+relerr*(abs(x)+abs(ans$x-x))))
 		if(err > 1){
 			#decrease step
 			dt = dt*max(9/10*err^(-1/(err_order-1)),1/5)
@@ -179,7 +179,7 @@ runge_kutta_fehlberg45_adaptive_step = function(dxdt, x,t,dt, abserr, relerr){
 	while(T){
 		ans = runge_kutta_fehlberg45_step(dxdt,x,t,dt)
 
-		err  = max(abs(ans$error)/(abserr+relerr*(abs(x)+abs(ans$x-x)*dt)))
+		err  = max(abs(ans$error)/(abserr+relerr*(abs(x)+abs(ans$x-x))))
 		if(err > 1){
 			#decrease step
 			dt = dt*max(9/10*err^(-1/(err_order-1)),1/5)
@@ -280,7 +280,7 @@ runge_kutta_dopri5_adaptive_step = function(dxdt, x,t,dt, abserr, relerr){
 	while(T){
 		ans = runge_kutta_dopri5_step(dxdt,x,t,dt)
 
-		err  = max(abs(ans$error)/(abserr+relerr*(abs(x)+abs(ans$x-x)*dt)))
+		err  = max(abs(ans$error)/(abserr+relerr*(abs(x)+abs(ans$x-x))))
 		if(err > 1){
 			#decrease step
 			dt = dt*max(9/10*err^(-1/(err_order-1)),1/5)
