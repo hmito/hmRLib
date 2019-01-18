@@ -11,15 +11,12 @@
 #' @return logical value: TRUE when segment1 and segment2 has a cross point.
 #' @export
 has_cross_point=function(seg1.a_x,seg1.a_y,seg1.b_x,seg1.b_y,seg2.a_x,seg2.a_y,seg2.b_x,seg2.b_y){
-	#x座標によるチェック
 	XCheck=rep(TRUE,length=length(seg1.a_x))
 	XCheck=!(((seg1.a_x >= seg1.b_x) & ((seg1.a_x < seg2.a_x & seg1.a_x < seg2.b_x) | (seg1.b_x > seg2.a_x & seg1.b_x > seg2.b_x)))|((seg1.a_x < seg1.b_x) & ((seg1.b_x < seg2.a_x & seg1.b_x < seg2.b_x) | (seg1.a_x > seg2.a_x & seg1.a_x > seg2.b_x))))
 
-	#y座標によるチェック
 	YCheck=rep(TRUE,length=length(seg1.a_y))
 	YCheck=!(((seg1.a_y >= seg1.b_y) & ((seg1.a_y < seg2.a_y & seg1.a_y < seg2.b_y) | (seg1.b_y > seg2.a_y & seg1.b_y > seg2.b_y)))|((seg1.a_y < seg1.b_y) & ((seg1.b_y < seg2.a_y & seg1.b_y < seg2.b_y) | (seg1.a_y > seg2.a_y & seg1.a_y > seg2.b_y))))
 
-	#交差条件チェック
 	Cross1Check=rep(TRUE,length=length(seg1.a_x))
 	Cross1Check=!(((seg1.a_x - seg1.b_x) * (seg2.a_y - seg1.a_y) + (seg1.a_y - seg1.b_y) * (seg1.a_x - seg2.a_x)) *((seg1.a_x - seg1.b_x) * (seg2.b_y - seg1.a_y) + (seg1.a_y - seg1.b_y) * (seg1.a_x - seg2.b_x)) > 0)
 

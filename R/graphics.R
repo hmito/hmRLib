@@ -21,7 +21,6 @@ image_polygon=function(x,y,z,...){
 	polygon(s$x,s$y,...)
 }
 
-#陰関数を疑似的に描画する
 #' @importFrom grDevices extendrange
 virtual_curve=function (expr, from = NULL, to = NULL, n = 101, add = FALSE,
     type = "l", ylab = NULL, log = NULL, xlim = NULL, ...){
@@ -67,7 +66,6 @@ virtual_curve=function (expr, from = NULL, to = NULL, n = 101, add = FALSE,
     invisible(list(x = x, y = y))
 }
 
-#expr1とexpr2に挟まれた領域を塗りつぶす
 #' @importFrom grDevices extendrange
 fill.interval=function (expr1, expr2, from = NULL, to = NULL, n = 101, add = FALSE,
     type = "l", ylab = NULL, log = NULL, xlim = NULL, ...){
@@ -151,28 +149,21 @@ fill.interval=function (expr1, expr2, from = NULL, to = NULL, n = 101, add = FAL
     invisible(list(x = c(x,rev(x)),y = c(y1,rev(y2))))
 }
 
-#条件に合う領域のみ描画
 limited_image=function(f,limit=NULL,num=400,xlim=c(0,1),ylim=c(0,1),col=rgb(0,0,0,1),add=FALSE,...){
-	#基本となる探索x,yシーケンス作成
 	x=seq(xlim[1],xlim[2],length=num)
 	y=seq(ylim[1],ylim[2],length=num)
 
-	#侵入可能エリアz1,共存可能エリアz2を計算
 	z=matrix(mapply(f,rep(x,times=num),rep(y,each=num)),num,num)
 
-	#制限されていない領域のみ描画
 	if(!is.null(limit)){
 		limit_area=matrix(mapply(limit,rep(x,times=num),rep(y,each=num)),num,num)
 		z=z&limit_area
 	}
 
-	#共存域について描画
 	image(x,y,z,col=c(rgb(1.,1.,1.,0.),col),add=add,...)
 }
 
-#条件に合う線のみ描画
 limited_lines=function(x,y,limit=NULL,...){
-	#制限されていない領域のみ描画
 	if(!is.null(limit)){
 		tmpx=x
 		tmpy=y
@@ -195,7 +186,6 @@ limited_lines=function(x,y,limit=NULL,...){
 		}
 	}
 
-	#描画
 	lines(x,y,...)
 
   return(length(x[!is.na(x)]))
