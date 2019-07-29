@@ -1,8 +1,8 @@
 #' Translate axis of histgram sequence into another axis
 #' @description This function translate the histgram sequence with a certain axis into another histgram sequence with a different axis.
 #' @param src.hist Source histgram sequence of float values.
-#' @param src.ax Source histgram axis. The length is length(src.hist)+1.
-#' @param trg.ax Target histgram axis.
+#' @param src.breakseq Source histgram breaks. The length is length(src.hist)+1.
+#' @param trg.breakseq Target histgram breaks.
 #' @return Target histgram sequence of float values.
 #' @export
 #' @examples
@@ -11,22 +11,56 @@
 #' y.ax = c(0,0.5,1,1.5,2,2.5)
 #' hist_axis_translate(x,x.ax,y.ax)
 #' # c(0.5,0.5,1,1,1.5)
-hist_axis_translate=function(src.hist,src.ax,trg.ax){
-	src.ln = length(src.ax)-1
-	trg.ln = length(trg.ax)-1
+hist_axis_translate=function(src.hist,src.breakseq,trg.breakseq){
+	src.ln = length(src.breakseq)-1
+	trg.ln = length(trg.breakseq)-1
 
-	trg1 = matrix(rep(trg.ax[-length(trg.ax)],times=src.ln),trg.ln,src.ln)
-	trg2 = matrix(rep(trg.ax[-1],times=src.ln),trg.ln,src.ln)
+	trg1 = matrix(rep(trg.breakseq[-length(trg.breakseq)],times=src.ln),trg.ln,src.ln)
+	trg2 = matrix(rep(trg.breakseq[-1],times=src.ln),trg.ln,src.ln)
 
-	src1 = matrix(rep(src.ax[-length(src.ax)],each=trg.ln),trg.ln,src.ln)
-	src2 = matrix(rep(src.ax[-1],each=trg.ln),trg.ln,src.ln)
+	src1 = matrix(rep(src.breakseq[-length(src.breakseq)],each=trg.ln),trg.ln,src.ln)
+	src2 = matrix(rep(src.breakseq[-1],each=trg.ln),trg.ln,src.ln)
 
 	dif = ifelse(trg2<src2,trg2,src2) - ifelse(trg1>src1,trg1,src1)
 
 	dif[dif<0]=0
 	dif=dif/(src2-src1)
 
-	return(dif%*%src.hist)
+	return(as.numeric(dif%*%src.hist))
+}
+
+#' Translate histgram matrix with min values and max values to a unified histgram matrix (i.e., same breaks)
+#' @description This function translate the histgram set with different min/max values into a histgram with a common breaks.
+#' @param minseq min values of source histgram matrix.
+#' @param maxseq max values of source histgram matrix.
+#' @param histmx source histgram matrix.
+#' @param minval min value of a unified histrgam.
+#' @param maxval max value of a unified histrgam.
+#' @param len length of a unified histrgam.
+#' @return List of new unified histgram matrix (hist), breaks (break) and mid values of each element (mids)
+#' @export
+minmaxhist_to_hist=function(minseq, maxseq, histmx, minval=NA, maxval=NA, len=NA){
+	if(is.na(minval)){
+		minval = min(minseq)
+	}
+	if(is.na(maxval)){
+		maxval = max(maxseq)
+	}
+	if(is.na(len)){
+		len = ncol(histmx)
+	}
+	breaks = seq(minval,maxval,length=len+1)
+
+	if(any(minseq==maxseq)){
+		return(NULL)
+	}
+
+	z = matrix(0,nrow(histmx),len)
+	for(i in 1:nrow(histmx)){
+		z[i,] = hmRLib::hist_axis_translate(histmx[i,],seq(minseq[i],maxseq[i],length=ncol(histmx)+1),breaks)
+	}
+
+	return(list(hist=z, breaks=breaks, mids=breaks[-length(breaks)]+diff(breaks)/2))
 }
 
 #' Smoothing histgram sequence by using simple moving average method
@@ -161,7 +195,7 @@ hist_find_peaks.slope = function(hist.data, min.ratio = 0.3, min.value = NA, int
 		this.upper = max(range[hist.data[range]>0])-1
 		this.top = range[order(hist.data[range],decreasing = TRUE)[1]]-1
 		this.freq = sum(hist.data[range])
-		
+
 		peaks = rbind(peaks,data.frame("lower"=this.lower,"upper"=this.upper,"top"=this.top,"freq"=this.freq))
 	}
 

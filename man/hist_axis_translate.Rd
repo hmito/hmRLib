@@ -4,14 +4,14 @@
 \alias{hist_axis_translate}
 \title{Translate axis of histgram sequence into another axis}
 \usage{
-hist_axis_translate(src.hist, src.ax, trg.ax)
+hist_axis_translate(src.hist, src.breakseq, trg.breakseq)
 }
 \arguments{
 \item{src.hist}{Source histgram sequence of float values.}
 
-\item{src.ax}{Source histgram axis. The length is length(src.hist)+1.}
+\item{src.breakseq}{Source histgram breaks. The length is length(src.hist)+1.}
 
-\item{trg.ax}{Target histgram axis.}
+\item{trg.breakseq}{Target histgram breaks.}
 }
 \value{
 Target histgram sequence of float values.
