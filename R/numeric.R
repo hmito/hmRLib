@@ -587,4 +587,3 @@ newton_planeroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001,...){
 
 	return(list(ansx,ansy))
 }
-

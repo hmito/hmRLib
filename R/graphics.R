@@ -21,6 +21,33 @@ image_polygon=function(x,y,z,...){
 	polygon(s$x,s$y,...)
 }
 
+#' Add points with error bars
+#' @description  Drow points with error bars.
+#' @param x vector of x-axis.
+#' @param y vector of y-axis.
+#' @param upper Error value of the upper boundary.
+#' @param lower Error value of the lower boundary. In default, lower = -upper.
+#' @param head.length Length of the head of error bar.
+#' @param horizontal Logical: if true the error bar for x will be drawn.
+#' @param ... arguments for arrows and points function
+#' @export
+error_points = function(x,y,upper,lower=NULL,head.length = 0.05, horizontal = FALSE,...){
+	if(is.null(lower)){
+		lower = -upper
+	}
+
+	asel = (upper>0 | lower>0)
+
+	if(sum(asel)>0){
+		if(horizontal){
+			arrows(x[asel]+lower[asel], y[asel], x[asel]+upper[asel], y[asel], length=head.length, angle=90, code=3,...)
+		}else{
+			arrows(x[asel], y[asel]+lower[asel], x[asel], y[asel]+upper[asel], length=head.length, angle=90, code=3,...)
+		}
+	}
+	points(x, y,...)
+}
+
 #' @importFrom grDevices extendrange
 virtual_curve=function (expr, from = NULL, to = NULL, n = 101, add = FALSE,
     type = "l", ylab = NULL, log = NULL, xlim = NULL, ...){
