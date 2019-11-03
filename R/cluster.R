@@ -7,7 +7,7 @@
 #' @return List with size: number of cluster and cluster: #cluster of each element.
 #' @importFrom stats kmeans var
 #' @export
-sizedist_clust = function(data, rate = 2, iter=10, kmax=10){
+overlap_check_kmeans = function(data, rate = 2, iter=10, kmax=10){
 	cls = NULL
 	for(i in 1:kmax){
 		tmpcls = kmeans(data,i)
@@ -47,3 +47,4 @@ sizedist_clust = function(data, rate = 2, iter=10, kmax=10){
 	}
 	return(cls)
 }
+
