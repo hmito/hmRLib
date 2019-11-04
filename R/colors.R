@@ -39,7 +39,7 @@ green.colors=function (n, val.white=0.2,rate.white=0.5,rate.dark=0.5) {
 	hsv(seq(1/6,2/6,length=n),c(seq(val.white,1.0,length=round(n*rate.white)),rep(1.0,length=n-round(n*rate.white))),seq(1.0,rate.dark,length=n))
 }
 
-#' CUD v3 color palet as the color universal design
+#' CUD v3 color set as the color universal design
 #' @description CUD v3 is the color palet for the color universal design, i.e., considring the accessibility for color blinders.
 #' @return List of colors
 #' @export
@@ -67,3 +67,29 @@ cud.colorset=function(){
 		black="#000000"
 	)
 }
+
+#' CUD v3 color palette as the color universal design
+#' @description CUD v3 is the color palet for the color universal design, i.e., considring the accessibility for color blinders.
+#' @param n Size of color set.
+#' @return Created color set.
+#' @export
+cud.pallete = function(n){
+	set = cud.colorset()
+	col = c(set$blue, set$red, set$yellow, set$skyblue, set$green,set$orange, set$brown, set$black, set$grey)
+	return(set[1:n])
+}
+
+#' matlab color palette as the color universal design
+#' @description Return color palette used in matlab.
+#' @param n Size of color set.
+#' @return Created color set.
+#' @export
+matlab.pallete = function(n){
+	col = c(rgb(0,0.4470,0.7410),rgb(0.8500,0.3250,0.0980), rgb(0.9290,0.6940,0.1250), rgb(0.4940,0.1840,0.5560), rgb(0.4660,0.6740,0.1880), rgb(0.3010,0.7450,0.9330), rgb(0.6350,0.0780,0.1840), "black","grey")
+}
+
+
+
+
+
+
