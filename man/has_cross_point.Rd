@@ -4,8 +4,16 @@
 \alias{has_cross_point}
 \title{Check if the segment seg1 is cross with seg2}
 \usage{
-has_cross_point(seg1.a_x, seg1.a_y, seg1.b_x, seg1.b_y, seg2.a_x, seg2.a_y,
-  seg2.b_x, seg2.b_y)
+has_cross_point(
+  seg1.a_x,
+  seg1.a_y,
+  seg1.b_x,
+  seg1.b_y,
+  seg2.a_x,
+  seg2.a_y,
+  seg2.b_x,
+  seg2.b_y
+)
 }
 \arguments{
 \item{seg1.a_x}{x value of point A on segment 1}

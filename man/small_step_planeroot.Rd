@@ -4,8 +4,7 @@
 \alias{small_step_planeroot}
 \title{Find root points on x-y plane by using small step method}
 \usage{
-small_step_planeroot(func, xlim = c(0, 1), ylim = c(0, 1), n = 1001,
-  ...)
+small_step_planeroot(func, xlim = c(0, 1), ylim = c(0, 1), n = 1001, ...)
 }
 \arguments{
 \item{func}{Function  whose root points are searched}

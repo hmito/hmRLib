@@ -4,8 +4,7 @@
 \alias{hist_find_peaks.slope}
 \title{Find peaks in given histgram by checking the valley of the data}
 \usage{
-hist_find_peaks.slope(hist.data, min.ratio = 0.3, min.value = NA,
-  interval = 1)
+hist_find_peaks.slope(hist.data, min.ratio = 0.3, min.value = NA, interval = 1)
 }
 \arguments{
 \item{hist.data}{The target histgram}

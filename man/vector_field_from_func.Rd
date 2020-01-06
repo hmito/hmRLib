@@ -4,9 +4,19 @@
 \alias{vector_field_from_func}
 \title{Plot vector field for 2D. Length is the strength of the vector.}
 \usage{
-vector_field_from_func(dxf, dyf, arrow.length, arrow.sublength,
-  xlim = c(0, 1), ylim = c(0, 1), num = 20, col = "black",
-  limit = NULL, add = FALSE, ...)
+vector_field_from_func(
+  dxf,
+  dyf,
+  arrow.length,
+  arrow.sublength,
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  num = 20,
+  col = "black",
+  limit = NULL,
+  add = FALSE,
+  ...
+)
 }
 \arguments{
 \item{dxf}{function for the gradient for x-axix}

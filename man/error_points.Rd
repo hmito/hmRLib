@@ -4,8 +4,15 @@
 \alias{error_points}
 \title{Add points with error bars}
 \usage{
-error_points(x, y, upper, lower = NULL, head.length = 0.05,
-  horizontal = FALSE, ...)
+error_points(
+  x,
+  y,
+  upper,
+  lower = NULL,
+  head.length = 0.05,
+  horizontal = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{vector of x-axis.}

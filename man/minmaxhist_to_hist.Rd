@@ -4,8 +4,7 @@
 \alias{minmaxhist_to_hist}
 \title{Translate histgram matrix with min values and max values to a unified histgram matrix (i.e., same breaks)}
 \usage{
-minmaxhist_to_hist(minseq, maxseq, histmx, minval = NA, maxval = NA,
-  len = NA)
+minmaxhist_to_hist(minseq, maxseq, histmx, minval = NA, maxval = NA, len = NA)
 }
 \arguments{
 \item{minseq}{min values of source histgram matrix.}

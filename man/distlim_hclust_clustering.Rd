@@ -4,8 +4,7 @@
 \alias{distlim_hclust_clustering}
 \title{Categorize multi dimension data based on the relative distance vs cluster size using hclust function}
 \usage{
-distlim_hclust_clustering(data, thr = 5, kmax = 10,
-  method = "ward.D2")
+distlim_hclust_clustering(data, thr = 5, kmax = 10, method = "ward.D2")
 }
 \arguments{
 \item{data}{Matrix data for clustering. Row is element and Col is axis.}

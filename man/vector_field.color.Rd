@@ -4,9 +4,20 @@
 \alias{vector_field.color}
 \title{Plot vector field for 2D. Color is the strength of the vector.}
 \usage{
-vector_field.color(x_seq, y_seq, dx, dy, colrate, arrow.length = NA,
-  arrow.sublength = 0.25, xyrate = 1, col = rev(heat.colors(100)),
-  limit = NULL, add = FALSE, ...)
+vector_field.color(
+  x_seq,
+  y_seq,
+  dx,
+  dy,
+  colrate,
+  arrow.length = NA,
+  arrow.sublength = 0.25,
+  xyrate = 1,
+  col = rev(heat.colors(100)),
+  limit = NULL,
+  add = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x_seq}{x-axix}

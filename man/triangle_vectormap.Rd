@@ -4,9 +4,19 @@
 \alias{triangle_vectormap}
 \title{Plot triangle vector map.}
 \usage{
-triangle_vectormap(x, y, vx, vy, xlab = "", ylab = "", zlab = "",
-  vlim = NA, arrow.len = 0.05, arrow.headlen = 0.1,
-  col = rev(gray.colors(20)))
+triangle_vectormap(
+  x,
+  y,
+  vx,
+  vy,
+  xlab = "",
+  ylab = "",
+  zlab = "",
+  vlim = NA,
+  arrow.len = 0.05,
+  arrow.headlen = 0.1,
+  col = rev(gray.colors(20))
+)
 }
 \arguments{
 \item{x}{position of first element.}

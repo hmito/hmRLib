@@ -4,8 +4,18 @@
 \alias{vector_field}
 \title{Plot vector field for 2D. Length is the strength of the vector.}
 \usage{
-vector_field(x_seq, y_seq, dx, dy, arrow.length, arrow.sublength,
-  col = "black", limit = NULL, add = FALSE, ...)
+vector_field(
+  x_seq,
+  y_seq,
+  dx,
+  dy,
+  arrow.length,
+  arrow.sublength,
+  col = "black",
+  limit = NULL,
+  add = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x_seq}{x-axix}

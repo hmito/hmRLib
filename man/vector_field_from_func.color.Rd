@@ -4,10 +4,21 @@
 \alias{vector_field_from_func.color}
 \title{Plot vector field for 2D. Color is the strength of the vector.}
 \usage{
-vector_field_from_func.color(dxf, dyf, colrate, arrow.length = NA,
-  arrow.sublength = 0.25, xyrate = 1, xlim = c(0, 1), ylim = c(0,
-  1), num = 20, col = rev(heat.colors(100)), limit = NULL,
-  add = FALSE, ...)
+vector_field_from_func.color(
+  dxf,
+  dyf,
+  colrate,
+  arrow.length = NA,
+  arrow.sublength = 0.25,
+  xyrate = 1,
+  xlim = c(0, 1),
+  ylim = c(0, 1),
+  num = 20,
+  col = rev(heat.colors(100)),
+  limit = NULL,
+  add = FALSE,
+  ...
+)
 }
 \arguments{
 \item{dxf}{function for the gradient for x-axix}
