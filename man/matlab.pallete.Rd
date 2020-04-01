@@ -4,7 +4,7 @@
 \alias{matlab.pallete}
 \title{matlab color palette as the color universal design}
 \usage{
-matlab.pallete(n)
+matlab.pallete(n = 10)
 }
 \arguments{
 \item{n}{Size of color set.}

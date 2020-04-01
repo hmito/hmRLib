@@ -4,7 +4,7 @@
 \alias{cud.pallete}
 \title{CUD v3 color palette as the color universal design}
 \usage{
-cud.pallete(n)
+cud.pallete(n = 10)
 }
 \arguments{
 \item{n}{Size of color set.}

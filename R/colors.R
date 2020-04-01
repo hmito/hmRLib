@@ -73,10 +73,10 @@ cud.colorset=function(){
 #' @param n Size of color set.
 #' @return Created color set.
 #' @export
-cud.pallete = function(n){
+cud.pallete = function(n=10){
 	set = cud.colorset()
-	col = c(set$blue, set$red, set$yellow, set$skyblue, set$green,set$orange, set$brown, set$black, set$grey)
-	return(set[1:n])
+	col = c(set$blue, set$red, set$yellow, set$skyblue, set$green,set$orange, set$brown, set$black, set$grey,set$lightgrey)
+	return(col[1:n])
 }
 
 #' matlab color palette as the color universal design
@@ -84,8 +84,9 @@ cud.pallete = function(n){
 #' @param n Size of color set.
 #' @return Created color set.
 #' @export
-matlab.pallete = function(n){
-	col = c(rgb(0,0.4470,0.7410),rgb(0.8500,0.3250,0.0980), rgb(0.9290,0.6940,0.1250), rgb(0.4940,0.1840,0.5560), rgb(0.4660,0.6740,0.1880), rgb(0.3010,0.7450,0.9330), rgb(0.6350,0.0780,0.1840), "black","grey")
+matlab.pallete = function(n=10){
+	col = c(rgb(0,0.4470,0.7410),rgb(0.8500,0.3250,0.0980), rgb(0.9290,0.6940,0.1250), rgb(0.4940,0.1840,0.5560), rgb(0.4660,0.6740,0.1880), rgb(0.3010,0.7450,0.9330), rgb(0.6350,0.0780,0.1840), "black","grey","darkgrey")
+	return(col[1:n])
 }
 
 
