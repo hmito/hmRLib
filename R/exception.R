@@ -112,7 +112,7 @@ assert=function(condition,message="assert error"){
 #' @export
 try_catch = function(expr, silent=TRUE){
 	ans = try(eval(expr),silent=silent)
-	if(class(ans)=="try-error"){
+	if(inherits(ans,"try-error")){
 		stack = callstack_trace()
 		ans = paste0(ans[1],callstack_message(">>> call stack",stack))
 		class(ans)="exception"
@@ -140,7 +140,7 @@ try_catch = function(expr, silent=TRUE){
 #' @export
 try_either = function(expr,alt_value=NULL,silent=TRUE,catch=NULL){
 	ans = try(eval(expr),silent=silent)
-	if(class(ans)=="try-error"){
+	if(inherits(ans,"try-error")){
 		if(!is.null(catch)){
 			stack = callstack_trace()
 			message = paste0(ans[1],callstack_message(">>> call stack",stack))
