@@ -89,8 +89,10 @@ matlab.pallete = function(n=10){
 	return(col[1:n])
 }
 
-
-
-
-
+coloropt.pallete = function(n=7){
+	if(n>7)warning("max coloropt length is 7.")
+	col = c(rgb(63/255,83/255,211/255),rgb(221/255,179/255,16/255),rgb(181/255,29/255,20/255),
+	rgb(0/255,190/255,255/255),rgb(251/255,73/255,176/255),rgb(0/255,178/255,93/255),rgb(202/255,202/255,202/255))
+	return(col[1:n])
+}
 
