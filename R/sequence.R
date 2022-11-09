@@ -68,3 +68,24 @@ matrix_na=function(nx,ny){
 	is.na(ans)=TRUE
 	return(ans)
 }
+
+#' Replace elements by other values
+#' @param target target vector, matrix or other types
+#' @param from the element values which should be replaced
+#' @param to the values which should be set for the replaced elements
+#' @param other if it is not NULL value, the target elements which is not hit to any of from values are replaced by other. 
+#' @return replaced results
+#' @export
+replace_by = function(target, from, to, other=NULL){
+	to = rep(to,length=length(from))
+	ok = target == target
+	for(i in 1:length(from)){
+		pos = target==from[i]
+		target[pos & ok]=to[i]
+		ok = ok & !pos
+	}
+	if(!is.null(other)){
+		target[ok] = other
+	}
+	return(target)
+}
