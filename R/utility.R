@@ -4,6 +4,7 @@
 #' @param location if location is "github.com/xxx", the package is installed from github.com
 #' @return True: found and loaded, False: fail to load
 #' @importFrom utils install.packages
+#' @importFrom devtools install_github
 #' @export
 strong_require = function(pck, location=NULL){
 	#try package load
