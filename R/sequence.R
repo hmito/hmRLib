@@ -105,7 +105,7 @@ replace_by = function(target, from, to, other=NULL){
 #' @param to the values which should be set depending on the thresholds
 #' @return replaced results
 #' @export
-by_threshold = function(target, thresholds, to){
+replace_by_threshold = function(target, thresholds, to){
 	if(length(to)!=length(thresholds)+1)	warning('in replace_by_threshold: the length of "to" should be equal to the length of "threshold" + 1.')
 	to = rep(to,length=length(thresholds)+1)
 	if(is.vector(target)){
