@@ -120,3 +120,30 @@ str_first_appear = function(string,similarity=3){
 		apply(apply((adist(string,string)<similarity),2,cumsum)>0,2,function(x){min((1:length(x))[x])})==1:length(string)
 	)
 }
+#' Generate random character sequences
+#' @description return n strings with length len.
+#' @param n number of str
+#' @param len length of each str
+#' @param lower_case logical: include lower case alphabets
+#' @param upper_case logical: include upper case alphabets
+#' @param number logical: include numbers
+#' @return sequences of string.
+#' @export
+rand_char = function(n,len,lower_case=TRUE,upper_case=TRUE,number=TRUE){
+	cand = NULL
+	if(number){
+		cand = c(cand,"0","1","2","3","4","5","6","7","8","9")
+	}
+	if(lower_case){
+		cand = c(cand,"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z")
+	}
+	if(upper_case){
+		cand = c(cand,"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z")
+	}
+	if(n<=0)return(NULL)
+	ans = NULL
+	for(i in 1:n){
+		ans = c(ans,paste(sample(cand,len),collapse=""))
+	}
+	return(ans)
+}
