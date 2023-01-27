@@ -104,7 +104,7 @@ str_to_han = function(x){
 #' @importFrom utils adist
 #' @export
 str_similar = function(string,target,similarity=3){
-	apply(adist(string,target)<similarity,1,any)
+	apply(adist(string,target)<=similarity,1,any)
 }
 #' Wherher the given string appear first time in the given string vector
 #' @description str can be uniqued by using string[str_first_appear(string)].
