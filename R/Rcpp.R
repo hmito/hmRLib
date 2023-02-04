@@ -13,9 +13,14 @@ source_cpp = function(file, I=NULL,L=NULL,l_opt=NULL,...){
 	PKG_LIBS =  Sys.getenv("PKG_LIBS")
 	on.exit(Sys.setenv("PKG_CXXFLAGS" = PKG_CXXFLAGS),add=TRUE)
 	on.exit(Sys.setenv("PKG_LIBS" = PKG_LIBS),add=TRUE)
-
-	PKG_CXXFLAGS_tmp = paste(PKG_CXXFLAGS,sprintf("-I%s",I),collapse=" ")
-	PKG_LIBS_tmp = paste(PKG_LIBS,sprintf("-L%s",L),l_opt,collapse=" ")
+	IPath = I
+	IPath.no = setdiff(sequence(length(I)),grep("^([a-zA-Z]:)?/",I))
+	IPath[IPath.no] = sprintf("%s/%s",getwd(),I[IPath.no])
+	LPath = L
+	LPath.no = setdiff(sequence(length(L)),grep("^([a-zA-Z]:)?/",L))
+	LPath[LPath.no] = sprintf("%s/%s",getwd(),L[LPath.no])
+	PKG_CXXFLAGS_tmp = paste(PKG_CXXFLAGS,sprintf('-I"%s"',IPath),collapse=" ")
+	PKG_LIBS_tmp = paste(PKG_LIBS,sprintf("-L%s",LPath),l_opt,collapse=" ")
 	Sys.setenv("PKG_CXXFLAGS" = PKG_CXXFLAGS_tmp)
 	Sys.setenv("PKG_LIBS" = PKG_LIBS_tmp)
 	sourceCpp(file,...)
