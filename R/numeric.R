@@ -587,3 +587,45 @@ newton_planeroot=function(func,xlim=c(0,1),ylim=c(0,1),n=1001,...){
 
 	return(list(ansx,ansy))
 }
+
+#' solve stable fraction numerically
+#' @description Return vectors which are solution of matrix.
+#' @param mx target matrix for solution
+#' @param hint vector which potentially close to the solution (for initial value)
+#' @param tol tolerance of error
+#' @param inidf time step
+#' @return numeric sequence of result vector.
+#' @export
+solve_numeric = function(mx, hint = NULL, tol = 1e-12, inidf = 1e-2){
+	if(is.null(hint) || length(hint)!=nrow(mx)){
+		f = c(1,rep(0,length=nrow(mx)-1))
+	}else{
+		f = hint
+	}
+
+	df = (mx%*%f)
+	df = df - sum(df*f)
+	df[f<=0 & df<0]=0
+	df[f>=1 & df>0]=0
+	maxdf = max(abs(df))
+	if(maxdf<=0.0)return(f)
+	dt = inidf/maxdf
+
+	pf = f
+	f = f+df*dt
+	f[f<0] = 0
+	f = f/sum(f)
+
+	while(max(f-pf)>tol){
+		pf = f
+		df = (mx%*%f)
+		df = df - sum(df*f)
+		df[f<=0 & df<0]=0
+		df[f>=1 & df>0]=0
+		f = f+df*dt
+		f[f<0] = 0
+		f = f/sum(f)
+	}
+
+	return(as.numeric(f))
+}
