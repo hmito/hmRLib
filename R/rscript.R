@@ -9,21 +9,38 @@ run_as_filedrop_script = function(fn,...){
 	}
 }
 
+#' Get OS name.
+#' @description Get OS name as sysname,
+#' @return System name; Windows=Windows, Linux=Linux, Mac=Darwin
+#' @export
+get_os_name = function(){
+	return(Sys.info()[["sysname"]])
+}
+
 #' Check if the program run on the Linux-base or windows from path system.
 #' @description This function return TRUE when the program run on the linux environment.
 #' @return Ligcal values: TRUE on Linux or Mac, FALSE on Windows.
 #' @export
 is_on_linux = function(){
-	return(substr(getwd(),1,1)=="/")
+	return(get_os_name() != "Windows")
+#	return(substr(getwd(),1,1)=="/")
 }
 
 #' Return the raw file path based on the os path system.
 #' @param path Path for path translation
 #' @return path with replace the path separater if it is required.
 #' @export
-os_path = function(path){
+as_os_style_path = function(path){
 	path = ifelse(is_on_linux()&is.character(path),path,gsub("/","\\\\",path))
 	return(path)
+}
+
+#' Return home path.
+#' @return home path.
+#' @export
+home_path = function(){
+	if(is_on_linux()) return("~")
+	else return(paste0(Sys.getenv("homedrive"),Sys.getenv("homepath")))
 }
 
 #' Execute given exe file with arguments.
@@ -32,18 +49,17 @@ os_path = function(path){
 #' @param ... optional arguments for exe file.
 #' @export
 execute = function(exe, ...){
-	cmd = os_path(exe)
+	cmd = as_os_style_path(exe)
 	argc = length(list(...))
 
 	if(argc!=0){
 		for(i in 1:argc){
-			cmd = paste(cmd, os_path(list(...)[[i]]))
+			cmd = paste(cmd, as_os_style_path(list(...)[[i]]))
 		}
 	}
 
 	system(cmd)
 }
-
 
 #' Execute given Rscript file with arguments.
 #' @description Execute given Rscript file with arguments.
@@ -51,13 +67,13 @@ execute = function(exe, ...){
 #' @param ... optional arguments for rscript file.
 #' @export
 run_rscript = function(rfile, ...){
-	cmd = os_path(rfile)
+	cmd = as_os_style_path(rfile)
 	cmd = paste("rscript",cmd)
 	argc = length(list(...))
 
 	if(argc!=0){
 		for(i in 1:argc){
-			cmd = paste(cmd, os_path(list(...)[[i]]))
+			cmd = paste(cmd, as_os_style_path(list(...)[[i]]))
 		}
 	}
 
@@ -71,13 +87,13 @@ run_rscript = function(rfile, ...){
 #' @param ... optional arguments for rscript file.
 #' @export
 start_rscript = function(rfile, ...){
-	cmd = os_path(rfile)
+	cmd = as_os_style_path(rfile)
 	cmd = paste("rscript",cmd)
 	argc = length(list(...))
 
 	if(argc!=0){
 		for(i in 1:argc){
-			cmd = paste(cmd, os_path(list(...)[[i]]))
+			cmd = paste(cmd, as_os_style_path(list(...)[[i]]))
 		}
 	}
 
