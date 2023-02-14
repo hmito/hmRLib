@@ -10,7 +10,6 @@ file.ext = function(filepath){
 			 stringr::str_replace(filepath,".+\\.([^/\\\\\\.]+)$","\\1"),"")
 }
 
-
 #' Get file name with extension
 #' @description Get file name with extension from file path.
 #' @param filepath file path (character)
@@ -46,10 +45,10 @@ file.dir = function(filepath){
 #' @param filepath file path (character)
 #' @param backup backup directory name; ignored if backup.dir is defined.
 #' @param backup.dir backup directory path; default is the same directory of given file.
-#' @return logical: TRUE if fail to find the file path.
+#' @return filepath
 #' @export
-file.backup = function(filepath,backup = "bak", backup.dir = NULL){
-	if(file.exists(filepath))return(TRUE)
+file.backup = function(filepath, backup = "bak", backup.dir = NULL){
+	if(!file.exists(filepath))return(filepath)
 
 	filedir = file.dir(filepath)
 	filename_ext = file.name_ext(filepath)
@@ -58,5 +57,5 @@ file.backup = function(filepath,backup = "bak", backup.dir = NULL){
 	}
 	dir.create(backup.dir,recursive = TRUE,showWarnings = FALSE)
 	file.copy(filepath, sprintf("%s/%s_%s", backup.dir,format(Sys.time(), "%y%m%d_%H%M%S"),filename_ext))
-	return(FALSE)
+	return(filepath)
 }

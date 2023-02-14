@@ -14,7 +14,7 @@ file.backup(filepath, backup = "bak", backup.dir = NULL)
 \item{backup.dir}{backup directory path; default is the same directory of given file.}
 }
 \value{
-logical: TRUE if fail to find the file path.
+filepath
 }
 \description{
 Make backup of the given file in backup directory
