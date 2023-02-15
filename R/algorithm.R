@@ -21,6 +21,31 @@ match.order=function(from,trg){
 	return(ans)
 }
 
+find_all = function(what,from,condition=`==`){
+	purrr::map(what,function(y){which(condition(y,from))})
+}
+find_first = function(what,from,condition=`==`){
+	purrr::map_int(what,function(y){z = which(condition(y,from)); ifelse(length(z),z[1],NA)})
+}
+find_unique = function(what,from,condition=`==`){
+	purrr::map_int(what,function(y){z = which(condition(y,from)); ifelse(length(z)==1,z,NA)})
+}
+count = function(what,from,condition=`==`){
+	purrr::map_int(what,function(y){sum(condition(y,from))})
+}
+find_all_row = function(what,fromMD,condition=`==`){
+	purrr::map(what,function(y){which(apply(condition(y,fromMD),1,any))})
+}
+find_first_row = function(what,fromMD,condition=`==`){
+	purrr::map_int(what,function(y){z = which(apply(condition(y,fromMD),1,any)); ifelse(length(z),z[1],NA)})
+}
+find_unique_row = function(what,fromMD,condition=`==`){
+	purrr::map_int(what,function(y){z = which(apply(condition(y,fromMD),1,any)); ifelse(length(z)==1,z,NA)})
+}
+count_row = function(what,fromMD,condition=`==`){
+	purrr::map_int(what,function(y){sum(apply(condition(y,fromMD),1,any))})
+}
+
 #' Return reduced value by the given target sequence.
 #' @description Find values at which trg is equal to from.
 #' @param from Value, vector or matrix
