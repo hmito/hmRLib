@@ -1,6 +1,6 @@
 #' Run as Rscript with dragged files
 #' @description Run given function as Rscript with drag&drop files.
-#' @param fn Funtion whose first argument is a drag&drop file
+#' @param fn Function whose first argument is a drag&drop file
 #' @param ... Arguments are passed to function f.
 #' @export
 run_as_filedrop_script = function(fn,...){
@@ -19,16 +19,16 @@ get_os_name = function(){
 
 #' Check if the program run on the Linux-base or windows from path system.
 #' @description This function return TRUE when the program run on the linux environment.
-#' @return Ligcal values: TRUE on Linux or Mac, FALSE on Windows.
+#' @return Logical values: TRUE on Linux or Mac, FALSE on Windows.
 #' @export
 is_on_linux = function(){
 	return(get_os_name() != "Windows")
 #	return(substr(getwd(),1,1)=="/")
 }
 
-#' Return the raw file path based on the os path system.
+#' Return the raw file path based on the OS path system.
 #' @param path Path for path translation
-#' @return path with replace the path separater if it is required.
+#' @return path with replace the path separator if it is required.
 #' @export
 as_os_style_path = function(path){
 	path = ifelse(is_on_linux()&is.character(path),path,gsub("/","\\\\",path))
@@ -81,10 +81,10 @@ run_rscript = function(rfile, ...){
 }
 
 
-#' Execute given Rscript file in parallele with arguments.
-#' @description Execute given Rscript file in parallele with arguments.
+#' Execute given Rscript file in parallel with arguments.
+#' @description Execute given Rscript file in parallel with arguments.
 #' @param rfile Path of Rscript file
-#' @param ... optional arguments for rscript file.
+#' @param ... optional arguments for Rscript file.
 #' @export
 start_rscript = function(rfile, ...){
 	cmd = as_os_style_path(rfile)
@@ -101,14 +101,14 @@ start_rscript = function(rfile, ...){
 	return(0)
 }
 
-#' Execute ownself in parallele with arguments.
-#' @description Run ownself as Rscript in parallele with arguments. In parallele started files, this function does not start new process.
+#' Execute ownself in parallel with arguments.
+#' @description Run ownself as Rscript in parallel with arguments. In parallel started files, this function does not start new process.
 #' @param ownpath Own file path
-#' @param ... optional arguments for rscript file.
+#' @param ... optional arguments for Rscript file.
 #' @export
 start_ownself = function(ownpath, ...){
-	if(!any(commandArgs(trailingOnly=TRUE)=="#parallelrun_slave")){
-		start_rscript(ownpath, ..., "#parallelrun_slave")
+	if(!any(commandArgs(trailingOnly=TRUE)=="#hmRLib::start_ownself::slave")){
+		start_rscript(ownpath, ..., "#hmRLib::start_ownself::slave")
 		return(TRUE)
 	}
 	return(FALSE)
