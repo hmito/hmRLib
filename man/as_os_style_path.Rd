@@ -2,7 +2,7 @@
 % Please edit documentation in R/rscript.R
 \name{as_os_style_path}
 \alias{as_os_style_path}
-\title{Return the raw file path based on the os path system.}
+\title{Return the raw file path based on the OS path system.}
 \usage{
 as_os_style_path(path)
 }
@@ -10,8 +10,8 @@ as_os_style_path(path)
 \item{path}{Path for path translation}
 }
 \value{
-path with replace the path separater if it is required.
+path with replace the path separator if it is required.
 }
 \description{
-Return the raw file path based on the os path system.
+Return the raw file path based on the OS path system.
 }

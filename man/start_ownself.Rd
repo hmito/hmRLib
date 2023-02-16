@@ -2,15 +2,15 @@
 % Please edit documentation in R/rscript.R
 \name{start_ownself}
 \alias{start_ownself}
-\title{Execute ownself in parallele with arguments.}
+\title{Execute ownself in parallel with arguments.}
 \usage{
 start_ownself(ownpath, ...)
 }
 \arguments{
 \item{ownpath}{Own file path}
 
-\item{...}{optional arguments for rscript file.}
+\item{...}{optional arguments for Rscript file.}
 }
 \description{
-Run ownself as Rscript in parallele with arguments. In parallele started files, this function does not start new process.
+Run ownself as Rscript in parallel with arguments. In parallel started files, this function does not start new process.
 }

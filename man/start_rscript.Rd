@@ -2,15 +2,15 @@
 % Please edit documentation in R/rscript.R
 \name{start_rscript}
 \alias{start_rscript}
-\title{Execute given Rscript file in parallele with arguments.}
+\title{Execute given Rscript file in parallel with arguments.}
 \usage{
 start_rscript(rfile, ...)
 }
 \arguments{
 \item{rfile}{Path of Rscript file}
 
-\item{...}{optional arguments for rscript file.}
+\item{...}{optional arguments for Rscript file.}
 }
 \description{
-Execute given Rscript file in parallele with arguments.
+Execute given Rscript file in parallel with arguments.
 }

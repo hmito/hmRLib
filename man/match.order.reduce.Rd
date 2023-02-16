@@ -2,7 +2,7 @@
 % Please edit documentation in R/algorithm.R
 \name{match.order.reduce}
 \alias{match.order.reduce}
-\title{Return reduced value by the given target sequence.}
+\title{<Deprecated> Return reduced value by the given target sequence.}
 \usage{
 match.order.reduce(from, fromval, trg, ini = 0, func = sum)
 }

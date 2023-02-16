@@ -7,7 +7,7 @@
 is_on_linux()
 }
 \value{
-Ligcal values: TRUE on Linux or Mac, FALSE on Windows.
+Logical values: TRUE on Linux or Mac, FALSE on Windows.
 }
 \description{
 This function return TRUE when the program run on the linux environment.

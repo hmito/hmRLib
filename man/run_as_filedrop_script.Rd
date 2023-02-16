@@ -7,7 +7,7 @@
 run_as_filedrop_script(fn, ...)
 }
 \arguments{
-\item{fn}{Funtion whose first argument is a drag&drop file}
+\item{fn}{Function whose first argument is a drag&drop file}
 
 \item{...}{Arguments are passed to function f.}
 }

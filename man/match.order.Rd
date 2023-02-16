@@ -2,7 +2,7 @@
 % Please edit documentation in R/algorithm.R
 \name{match.order}
 \alias{match.order}
-\title{Return index numbers of the target sequence which is matching to the obj,}
+\title{<Deprecated> Return index numbers of the target sequence which is matching to the obj,}
 \usage{
 match.order(from, trg)
 }
@@ -16,10 +16,4 @@ Found once: Index numbers, Found multiple times: NA, Didn't find: 0
 }
 \description{
 Find index number at which trg is equal to obj. Return 0 if it is not found in trg, and return NA if it has been multitmes found.
-}
-\examples{
-x = c(115,103,99,120)
-trg = c(1:50 + 100,120)
-match.order(x,trg)
-# c(15,3,0,NA)
 }
