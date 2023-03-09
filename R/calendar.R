@@ -110,7 +110,50 @@ jpera_to_ystr = function(str){
 #' @return transformed data.frame
 #' @importFrom magrittr %>%
 #' @export
-str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+	str = c("　　２０２１年４月２日～１０日", "2nd - 10th Dec. 2021", "from 2021.2.3 to 2022.3.1", "2021-03-02~2021-10-31", "2021.04.23-05.01")
+	#Data = readRDS("D:/LocalEES/dat/annual_report/annual_report_2017-2021.rds")
+	#strbase = data.frame(str = c(Data$misc$date,  Data$conf_talk$date)) %>%  dplyr::filter(!(stringr::str_detect(str,"^[0-9]{4}$") | stringr::str_detect(str,"^[0-9]{8}$"))) %>%dplyr::pull(str) %>% unique()
+
+	# basic character update
+	str = strbase %>%
+		hmRLib::str_to_han() %>%
+		stringr::str_replace_all("\s+"," ") %>%
+		stringr::str_replace_all("\sof\s"," ") %>%
+		stringr::str_remove("^\\s") %>%
+		stringr::str_to_lower() %>%
+		stringr::str_remove_all("\u3002") %>%
+		stringr::str_replace_all("\u3001",",") %>%
+		return()
+
+	# range split update
+	#	default:~ single"-", "to", "から" can be used
+	str = dplyr::if_else(stringr::str_count(str,"-")==1, stringr::str_replace(str,"-","~"),str) %>%
+		stringr::str_remove_all("(^|\s)from(\s|$)") %>%
+		stringr::str_replace("(^|\s)to(\s|$)", "~") %>%
+		stringr::str_remove_all("\u307e\u3067") %>%
+		stringr::str_replace("\u304b\u3089","~") %>%
+		return()
+
+	# add split update
+	#  default:& single"," "・" "、"\uff65 "and" "および" "及び" "と"
+	str = str_replace_all()
+
+	#stringr::str_split(str,"~")
+	#stringr::str_extract(c("1st","21st","41st","4th","04th","32nd"),"([0-3]?[0-9])(th|nd|st)",1)
+
+
+	# unify for / and .
+	str = stringr::str_replace_all(str,"[/\-]",".")
+	# remove week information
+	week = ""
+	str = str_remove_all(str,"(.+)") %>%
+		str_remove_all(
+			paste0(paste0(c("\u65e5","\u6708","\u706b","\u6c34","\u6728","\u91d1","\u571f"),collapse="|"),"(\u66dc|\u66dc\u65e5)?")
+		) %>%
+
+
+
 	if(is.null(Date.beg)){
 		Date.beg = as.Date("1970-01-01")
 	}
