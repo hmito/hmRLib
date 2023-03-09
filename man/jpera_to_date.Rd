@@ -4,7 +4,7 @@
 \alias{jpera_to_date}
 \title{get Date type from Japanese Era name}
 \usage{
-jpera_to_date(str, tryFormats = c("\%E-\%m-\%d", "\%E.\%m.\%d"))
+jpera_to_date(str, tryFormats = c("\%E-\%m-\%d", "\%E.\%m.\%d"), ...)
 }
 \arguments{
 \item{str}{target character or sequence of character.}
