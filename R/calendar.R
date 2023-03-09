@@ -109,15 +109,6 @@ jpera_to_ystr = function(str){
 #' @param exceldate.origin Origin of excel date. In default, it is 1900-01-01 if the file is originally created on Windows and 1904-01-01 on Mac.
 #' @return transformed data.frame
 #' @importFrom magrittr %>%
-#' @importFrom stringr str_detect
-#' @importFrom stringr str_extract
-#' @importFrom stringr str_remove
-#' @importFrom stringr str_remove_all
-#' @importFrom stringr str_replace_all
-#' @importFrom stringr str_split
-#' @importFrom stringr str_sub
-#' @importFrom stringr str_to_lower
-#' @importFrom stringr str_length
 #' @export
 str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
 	if(is.null(Date.beg)){
@@ -128,7 +119,7 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 	}
 	Candidate_y = as.integer(format(Date.beg,"%Y")):as.integer(format(Date.end,"%Y"))
 
-	str = hmRLib::str_number_to_han(str_remove_all(str_remove_all(str,"^\\s+"),"\\s+$"))
+	str = hmRLib::str_number_to_han(stringr::str_remove_all(stringr::str_remove_all(str,"^\\s+"),"\\s+$"))
 
 	fn = function(Str){
 		ymd = data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_)
@@ -136,15 +127,15 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 
 		if(is.na(Str))return(ymd)
 
-		if(str_detect(Str,"\u5e74|\u6708|\u65e5")){
+		if(stringr::str_detect(Str,"\u5e74|\u6708|\u65e5")){
 			#年月日の場合
 			if(use.jpera){
-				ymd$y = Str %>% str_extract("(.*[0-9]{1,4})\u5e74",1) %>% hmRLib::jpera_to_ystr() %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+				ymd$y = Str %>% stringr::str_extract("(.*[0-9]{1,4})\u5e74",1) %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 			}else{
-				ymd$y = Str %>% str_extract("(.*[0-9]{1,4})\u5e74",1) %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+				ymd$y = Str %>% stringr::str_extract("(.*[0-9]{1,4})\u5e74",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 			}
-			ymd$m = Str %>% str_extract("([0-9]{1,2})\u6708",1) %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-			ymd$d = Str %>% str_extract("([0-9]{1,2})\u65e5",1) %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+			ymd$m = Str %>% stringr::str_extract("([0-9]{1,2})\u6708",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+			ymd$d = Str %>% stringr::str_extract("([0-9]{1,2})\u65e5",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 
 			#二けた表記の場合、可能性のある年で救済
 			ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
@@ -154,17 +145,17 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 		}
 
 		#?やXは未定値として扱うためゼロ置換
-		Str = str_replace_all(Str,"[?X]","0")
+		Str = stringr::str_replace_all(Str,"[?X]","0")
 
-		Str.split = str_split(Str,"[\\s\\t\\.\\-/,]")[[1]]
+		Str.split = stringr::str_split(Str,"[\\s\\t\\.\\-/,]")[[1]]
 		Str.split = Str.split[Str.split!=""]
 		if(length(Str.split)>=2){
 			#Check English
 			EnMonth.seq = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
-			EnMonth = str_detect(str_to_lower(Str.split),paste(EnMonth.seq,collapse="|"))
+			EnMonth = stringr::str_detect(stringr::str_to_lower(Str.split),paste(EnMonth.seq,collapse="|"))
 			if(sum(EnMonth)==1){
 				for(i in 1:12){
-					if(str_detect(str_to_lower(Str.split[EnMonth]),EnMonth.seq[i])){
+					if(stringr::str_detect(stringr::str_to_lower(Str.split[EnMonth]),EnMonth.seq[i])){
 						ymd$m = i
 						break
 					}
@@ -172,15 +163,15 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 				Str.split = Str.split[!EnMonth]
 
 				if(length(Str.split)>=2){
-					ymd$d = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$y = Str.split[2] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$d = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$y = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
 						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
 						ans = ymd
 					}
 
-					ymd$d = Str.split[2] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$y = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$d = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
 						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
 						ans = ymd
@@ -190,13 +181,13 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 				}
 
 				ymd$d = NA_integer_
-				ymd$y = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+				ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
 					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
 					ans = ymd
 				}
 
-				ymd$d = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+				ymd$d = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				ymd$y = NA_integer_
 				if(ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
 					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
@@ -208,12 +199,12 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 			}else{
 				if(length(Str.split)>=3){
 					if(use.jpera){
-						ymd$y = Str.split[1] %>% hmRLib::jpera_to_ystr() %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+						ymd$y = Str.split[1] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					}else{
-						ymd$y = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+						ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					}
-					ymd$m = Str.split[2] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$d = Str.split[3] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$m = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$d = Str.split[3] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
 					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(0,1:12) & ymd$d %in% c(0,1:31)){
 						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
@@ -227,12 +218,12 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 					if(!is.null(ans))return(ans)
 
 					if(use.jpera){
-						ymd$y = Str.split[3] %>% hmRLib::jpera_to_ystr() %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+						ymd$y = Str.split[3] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					}else{
-						ymd$y = Str.split[3] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+						ymd$y = Str.split[3] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					}
-					ymd$m = Str.split[2] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$d = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$m = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$d = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 					ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
 					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
 						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
@@ -244,12 +235,12 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 				}
 
 				if(use.jpera){
-					ymd$y = Str.split[1] %>% hmRLib::jpera_to_ystr() %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$y = Str.split[1] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				}else{
-					ymd$y = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				}
 				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-				ymd$m = Str.split[2] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+				ymd$m = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				ymd$d = NA_integer_
 				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
 					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
@@ -257,12 +248,12 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 				}
 
 				if(use.jpera){
-					ymd$y = Str.split[2] %>% hmRLib::jpera_to_ystr() %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$y = Str.split[2] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				}else{
-					ymd$y = Str.split[2] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+					ymd$y = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				}
 				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-				ymd$m = Str.split[1] %>% str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+				ymd$m = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
 				ymd$d = NA_integer_
 				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
 					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
@@ -274,12 +265,12 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 			}
 		}
 
-		Str.int = str_extract(Str,"^[^0-9]*([0-9]{4,8})[^0-9]*+$",1)
+		Str.int = stringr::str_extract(Str,"^[^0-9]*([0-9]{4,8})[^0-9]*+$",1)
 		if(!is.na(Str.int)){
-			if(str_length(Str.int)==8){
-				ymd$y = as.integer(str_sub(Str.int,1,4))
-				ymd$m = as.integer(str_sub(Str.int,5,6))
-				ymd$d = as.integer(str_sub(Str.int,7,8))
+			if(stringr::str_length(Str.int)==8){
+				ymd$y = as.integer(stringr::str_sub(Str.int,1,4))
+				ymd$m = as.integer(stringr::str_sub(Str.int,5,6))
+				ymd$d = as.integer(stringr::str_sub(Str.int,7,8))
 
 
 				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(0,1:12) & ymd$d %in% c(0,1:31)){
@@ -292,10 +283,10 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 
 				if(!is.null(ans))return(ans)
 				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}else if(str_length(Str.int)==6){
-				ymd$y = as.integer(str_sub(Str.int,1,2))
-				ymd$m = as.integer(str_sub(Str.int,3,4))
-				ymd$d = as.integer(str_sub(Str.int,5,6))
+			}else if(stringr::str_length(Str.int)==6){
+				ymd$y = as.integer(stringr::str_sub(Str.int,1,2))
+				ymd$m = as.integer(stringr::str_sub(Str.int,3,4))
+				ymd$d = as.integer(stringr::str_sub(Str.int,5,6))
 				#y二けたの場合は救済
 				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
 
@@ -309,8 +300,8 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 
 				if(!is.null(ans))return(ans)
 
-				ymd$y = as.integer(str_sub(Str.int,1,4))
-				ymd$m = as.integer(str_sub(Str.int,5,6))
+				ymd$y = as.integer(stringr::str_sub(Str.int,1,4))
+				ymd$m = as.integer(stringr::str_sub(Str.int,5,6))
 				ymd$d = NA_integer_
 				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
 					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
@@ -319,7 +310,7 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 
 				if(!is.null(ans))return(ans)
 				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}else if(str_length(Str.int)==4){
+			}else if(stringr::str_length(Str.int)==4){
 				ymd$y = as.integer(Str.int)
 				ymd$m = NA_integer_
 				ymd$d = NA_integer_
@@ -329,16 +320,16 @@ str_to_ymd = function(str, Date.beg = NULL, Date.end = NULL, use.jpera=TRUE, use
 				}
 
 				ymd$y = NA_integer_
-				ymd$m = as.integer(str_sub(Str.int,1,2))
-				ymd$d = as.integer(str_sub(Str.int,3,4))
+				ymd$m = as.integer(stringr::str_sub(Str.int,1,2))
+				ymd$d = as.integer(stringr::str_sub(Str.int,3,4))
 				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
 				if(ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
 					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
 					ans = ymd
 				}
 
-				ymd$y = as.integer(str_sub(Str.int,1,2))
-				ymd$m = as.integer(str_sub(Str.int,3,4))
+				ymd$y = as.integer(stringr::str_sub(Str.int,1,2))
+				ymd$m = as.integer(stringr::str_sub(Str.int,3,4))
 				ymd$d = NA_integer_
 				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
 				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
