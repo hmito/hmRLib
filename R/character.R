@@ -89,10 +89,12 @@ str_symbol_to_han = function(x){
 #' @return replaced character
 #' @export
 str_to_han = function(x){
-	x = str_alphabet_to_han(x)
-	x = str_number_to_han(x)
-	x = str_symbol_to_han(x)
-	return(x)
+	x %>%
+		str_alphabet_to_han() %>%
+		str_number_to_han() %>%
+		str_symbol_to_han() %>%
+		stringr::str_remove_all("\u3000","\\s") %>%
+		return()
 }
 
 #' Check similarity of given string with target.

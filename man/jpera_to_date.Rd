@@ -4,12 +4,14 @@
 \alias{jpera_to_date}
 \title{get Date type from Japanese Era name}
 \usage{
-jpera_to_date(str, tryFormats = c("\%E-\%m-\%d", "\%E.\%m.\%d"))
+jpera_to_date(str, tryFormats = c("\%E-\%m-\%d", "\%E.\%m.\%d"), ...)
 }
 \arguments{
 \item{str}{target character or sequence of character.}
 
 \item{tryFormats}{format of str for reading JP era and other date data. \%E mean era. The other options follows as.Date function.}
+
+\item{...}{arguments passing to as.Date function}
 }
 \value{
 Date class
