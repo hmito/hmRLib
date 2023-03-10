@@ -10,6 +10,8 @@ jpera_to_date(str, tryFormats = c("\%E-\%m-\%d", "\%E.\%m.\%d"), ...)
 \item{str}{target character or sequence of character.}
 
 \item{tryFormats}{format of str for reading JP era and other date data. \%E mean era. The other options follows as.Date function.}
+
+\item{...}{arguments passing to as.Date function}
 }
 \value{
 Date class

@@ -12,6 +12,7 @@ Date.origin = as.Date("2000-01-01") - as.integer(as.Date("2000-01-01"))
 #' @description Work like as.Date but Japanese Era can be allowed, which is represented as \%E in format. Default formats are "R1-04-03" or "R1.04.03".
 #' @param str target character or sequence of character.
 #' @param tryFormats format of str for reading JP era and other date data. \%E mean era. The other options follows as.Date function.
+#' @param ... arguments passing to as.Date function
 #' @return Date class
 #' @export
 jpera_to_date = function(str, tryFormats = c("%E-%m-%d", "%E.%m.%d"),...){
@@ -99,39 +100,22 @@ jpera_to_ystr = function(str){
 	return(str)
 }
 
-#' transform string to ymd data table.
-#' @description transform string to ymd data table like data.frame(y=2022,m=5,d=12). NA will be filled for uncertain elements.
-#' @param str target character or sequence of character.
-#' @param Date.beg potentially start date; used for validation and estimation.
+#' formatting date string
+#' @description unify valid format of date
+#' @param datestr target character or sequence of character.
+#' @param Date.beg potentially begin date; used for validation and estimation.
 #' @param Date.end potentially end date; used for validation and estimation.
+#' @param strict return NA if read datestr is out of Date.beg-Date.end range
+#' @param use.range Allow range date format
 #' @param use.jpera Allow Japanese era case (e.g., R2.4.5 or 令和3年4月11日).
 #' @param use.exceldate Allow to check the value which is originally excel date but occationally transformed to normal value.
 #' @param exceldate.origin Origin of excel date. In default, it is 1900-01-01 if the file is originally created on Windows and 1904-01-01 on Mac.
-#' @return transformed data.frame
+#' @return transformed date string like "2021.03.04-2023.05.31"
 #' @importFrom magrittr %>%
 #' @export
-str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, strict = FALSE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
-	#str = c("令和5年2月3日","H23年2月3日","H23.2.4-H23.3.5","　　２０２１年４月２日～２０２１年４月１０日","　　２０２１年４月２日～１０日", "2nd - 10th Dec. 2021", "R2.4.3","from 2021.2.3 to 2022.3.1", "2021-03-02~2021-10-31", "2021.04.23-05.01")
-	#Data = readRDS("D:/LocalEES/dat/annual_report/annual_report_2017-2021.rds")
-	#strbase = data.frame(str = c(Data$misc$date,  Data$conf_talk$date)) %>%  dplyr::filter(!(stringr::str_detect(str,"^[0-9]{4}$") | stringr::str_detect(str,"^[0-9]{8}$"))) %>%dplyr::pull(str) %>% unique()
-	#str = c(str,strbase)
-
-	str.full = c("2012.3.4-2012.5.6","2012年3月4日-2012年5月6日","H24.3.4-H24.5.6","H24年3月4日-H24年5月6日","平成24年3月4日-平成24年5月6日",
-					 "4th March, 2012 - 6th May, 2012","4-mar-2012~6-may-2012","4Mar2012 - 6May2012","2012 3/4 - 2012 5/6",
-					 "March 4th, 2012 - May 6th, 2012","mar-4-2012~may-6-2012",
-					 "2012.3.4-5.6","2012年3月4日-5月6日","H24.3.4-5.6","H24年3月4日-5月6日","平成24年3月4日-5月6日",
-					 "4th March - 6th May, 2012","4-mar~6-may-2012","4Mar-6May2012",
-					 "March 4th - May 6th, 2012","mar-4~may-6-2012",
-					 "2012.3.4-5","2012年3月4-5日","H24.3.4-5","H24年3月4日-5日","平成24年3月4-5日",
-					 "4th - 5th March, 2012","4~5-mar-2012","4-5Mar2012",
-					 "March 4th - 5th, 2012","mar 4~5 2012"
-	)
-	str =c(str.full,"20120304-20120506","20120304-506","20120304-6","12.03.04-12.05.06","12.03.04","2012.03-04","2012年3月-4月",
-			 "H24.03-04","H24年3月-4月","2012.03","H24.3","H24年3月","2012年3月",
-			 "2012.3.X-2012.5.X","????年3月4日-????年5月6日")
-
+datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
 	# basic character update
-	str = str %>%
+	datestr = datestr %>%
 		hmRLib::str_to_han() %>%
 		stringr::str_remove_all("\\(.+\\)") %>%
 		stringr::str_replace_all("\\s+"," ") %>%
@@ -143,11 +127,11 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 		return()
 
 	#remove multiple - by .
-	str = dplyr::if_else(stringr::str_count(str,"-")!=1, stringr::str_replace_all(str,"[\\-]","."),str)
+	datestr = dplyr::if_else(stringr::str_count(datestr,"-")!=1, stringr::str_replace_all(datestr,"[\\-]","."),datestr)
 
 	# range-split update
 	#	default:~ single"-", "to", "から" can be used
-	str = str %>%
+	datestr = datestr %>%
 		stringr::str_replace("-","~") %>%
 		stringr::str_remove_all("(^|\\s)from(\\s|$)") %>%
 		stringr::str_replace("(^|\\s)to(\\s|$)", "~") %>%
@@ -158,7 +142,7 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 	# add-split update
 	#  default:& single"," "\u30fb" "、"\uff65 "and" "および" "及び" "と"
 	# ","はかなり有望な候補だが、ここでは保留
-	str = str %>%
+	datestr = datestr %>%
 		stringr::str_replace_all("\\s*and\\s*","&") %>%
 		stringr::str_replace_all("[\u30fb\uff65]","&") %>%
 		stringr::str_replace_all("(\u304a\u3088\u3073|\u53ca\u3073|\u3068)","&") %>%
@@ -166,11 +150,11 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 
 	# missing value
 	#  fill 0
-	str = str %>%
+	datestr = datestr %>%
 		stringr::str_replace_all("[\\?x]","x")
 
 	# remove week information
-	str = str %>%
+	datestr = datestr %>%
 		stringr::str_remove_all(
 			paste0("(",paste0(c("\u65e5","\u6708","\u706b","\u6c34","\u6728","\u91d1","\u571f"),collapse="|"),")(\u66dc|\u66dc\u65e5),?")
 		) %>%
@@ -185,7 +169,7 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 		)
 
 	# 最後に基本的なスペース除去
-	str = str %>%
+	datestr = datestr %>%
 		stringr::str_remove("^\\s+") %>%
 		stringr::str_remove("\\s+$") %>%
 		stringr::str_replace("\\s*,\\s*",",") %>%
@@ -203,12 +187,53 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 	Year.end = as.integer(strftime(Date.end,"%Y"))
 	Month.beg = as.integer(strftime(Date.beg,"%Y"))*12 + as.integer(strftime(Date.beg,"%m"))-1
 	Month.end = as.integer(strftime(Date.end,"%Y"))*12 + as.integer(strftime(Date.end,"%m"))-1
-	#Candidate_y = as.integer(format(Date.beg,"%Y")):as.integer(format(Date.end,"%Y"))
 
-	YMD_to_str = function(ymd){
+	# これを正規表現に放り込むので、エスケープのエスケープが必須
+	P = list(
+		Y = "([0-2x][0-9x]{3})",
+		Y2 = "([0-9x]{2})",
+		to = "[~&]",
+		sep = "[\\\\.\\\\-\\\\s]",
+		space = "[\\\\s\\\\.,]*",
+		M = "([0-2x]?[0-9x])",
+		D = "([0-3x]?[0-9x])",
+		M2 = "([0-2x][0-9x])",
+		D2 = "([0-3x][0-9x])",
+		beg = "(?:^|[^a-z0-9])",
+		end = "(?:$|[^a-z0-9])",
+		Y_JP = sprintf("((?:%s)[0-6x]?[0-9x])",paste0(jpera_traits$jpname,collapse="|")),
+		Y_jp = sprintf("([%s][0-6x]?[0-9x])",stringr::str_to_lower(paste0(jpera_traits$name,collapse=""))),
+		M_en = "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)",
+		D_en = "([0-3x]?[0-9x](?:th|nd|rd)?)"
+	)
+	YMD_to_str = function(ymd, opt=NULL){
 		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
+			if("-MD" %in% opt){
+				ymd = cbind(matrix(ymd,ncol=1), matrix(NA_character_,nrow=length(ymd),ncol=1), matrix(NA_character_,nrow=length(ymd),ncol=1))
+			}else{
+				ymd = matrix(ymd,nrow=1)
+			}
 		}
+		if("-Y" %in% opt){
+			ymd = cbind(matrix(NA_character_,nrow=nrow(ymd),ncol=1), ymd)
+		}
+		if("-D" %in% opt){
+			ymd = cbind(ymd, matrix(NA_character_,nrow=nrow(ymd),ncol=1))
+		}
+		if("Yj" %in% opt){
+			ymd[,1] = hmRLib::jpera_to_ystr(ymd[,1])
+		}
+		if("Y2" %in% opt){
+			ymd1 = (Year.beg:Year.end)[hmRLib::find_unique(suppressWarnings(as.integer(ymd[,1])),Year.beg:Year.end,function(x,y){x==y%%100})]
+			ymd[,1] = dplyr::if_else(is.na(ymd1),NA_character_,sprintf("%d",ymd1))
+		}
+		if("Me" %in% opt){
+			ymd[,2] = hmRLib::replace_by(ymd[,2],c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"),1:12)
+		}
+		if("De" %in% opt){
+			ymd[,3] = stringr::str_remove_all(ymd[,3],"[^0-9]")
+		}
+
 		y = suppressWarnings(as.integer(ymd[,1]))
 		m = suppressWarnings(as.integer(ymd[,2]))
 		d = suppressWarnings(as.integer(ymd[,3]))
@@ -218,21 +243,24 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 
 		is.ymd = !(is.na(y)|is.na(m)|is.na(d))
 		Date = as.Date(sprintf("%d-%d-%d",y,m,d),format="%Y-%m-%d",optional=TRUE)
+		DateStr = strftime(Date,"%Y.%m.%d")
 		if(strict){
-			Date[Date.beg > Date | Date > Date.end]=NA
+			DateStr[Date.beg > Date | Date > Date.end]=NA
 		}
 
 		is.ym = !(is.na(y)|is.na(m))&is.na(d)
 		Month = y*12+m-1
-		Month[1>m | m>12] = NA
+		MonthStr = sprintf("%04d.%02d.??",as.integer(Month/12),Month%%12+1)
+		MonthStr[1>m | m>12] = NA
 		if(strict){
-			Month[Month.beg > Month | Month > Month.end]=NA
+			MonthStr[Month.beg > Month | Month > Month.end]=NA
 		}
 
 		is.y = !(is.na(y)) & is.na(m) & is.na(d)
 		Year = y
+		YearStr = sprintf("%04d.??.??",Year)
 		if(strict){
-			Year[Year.beg > Year| Year > Year.end]=NA
+			YearStr[Year.beg > Year| Year > Year.end]=NA
 		}
 
 		is.md = is.na(y) & !(is.na(m) | is.na(d))
@@ -241,738 +269,465 @@ str_to_ymd = function(str, is.range = FALSE, Date.beg = NULL, Date.end = NULL, s
 		mdDate2 = TestDates[hmRLib::find_unique(sprintf("%02d.%02d",m,d),TestDates,function(x,y){x==strftime(y,"%m.%d")})]
 		mdStr = dplyr::if_else(!is.na(mdDate2),strftime(mdDate2,"%Y.%m.%d"),strftime(mdDate,"????.%m.%d"))
 
-
-			return(dplyr::case_when(
-				is.ymd ~ strftime(Date,"%Y.%m.%d"),
-				is.ym ~ sprintf("%04d.%02d.??",as.integer(Month/12),Month%%12+1),
-				is.y ~ sprintf("%04d.??.??",Year),
-				is.md ~ mdStr,
+		return(dplyr::case_when(
+			is.ymd ~ DateStr,
+			is.ym ~ MonthStr,
+			is.y ~ YearStr,
+			is.md ~ mdStr,
+			TRUE ~ NA_character_
+		))
+	}
+	YMDYMD_to_str = function(ymd, opt=NULL){
+		if(is.vector(ymd)){
+			ymd = matrix(ymd,nrow=1)
+		}
+		return(stringr::str_c(YMD_to_str(ymd[,1:(ncol(ymd)/2)],opt),YMD_to_str(ymd[,1:(ncol(ymd)/2)+(ncol(ymd)/2)],opt),sep = "-"))
+	}
+	try_cand = function(pack, pattern){
+		opt = c(
+			dplyr::if_else(stringr::str_detect(pattern,"%Yj|%YJ"),"Yj",NA_character_),
+			dplyr::if_else(stringr::str_detect(pattern,"%Y2"),"Y2",NA_character_),
+			dplyr::if_else(stringr::str_detect(pattern,"%Me"),"Me",NA_character_),
+			dplyr::if_else(stringr::str_detect(pattern,"%De"),"De",NA_character_),
+			dplyr::case_when(
+				!stringr::str_detect(pattern,"%M|%D")~"-MD",
+				!stringr::str_detect(pattern,"%D")~"-D",
+				!stringr::str_detect(pattern,"%Y")~"-Y",
 				TRUE ~ NA_character_
-			))
-	}
-	YMDYMD_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
+			)
+		)
+
+		pickup = stringr::str_extract_all(pattern,"%[YMD]",simplify = TRUE) %>% as.vector()
+		second_apper = duplicated(pickup)
+		if(any(second_apper)){
+			to_str = YMDYMD_to_str
+			pickup[second_apper] = stringr::str_c(pickup[second_apper],"2")
+			pickup_order = hmRLib::find_unique(c("%Y","%M","%D","%Y2","%M2","%D2"),pickup)
+			pickup_order[c(4,5,6)][is.na(pickup_order[c(4,5,6)])]=pickup_order[c(1,2,3)][is.na(pickup_order[c(4,5,6)])]
+			pickup_order = pickup_order[!is.na(pickup_order)]
+		}else{
+			to_str = YMD_to_str
+			pickup_order = hmRLib::find_unique(c("%Y","%M","%D"),pickup)
+			pickup_order = pickup_order[!is.na(pickup_order)]
 		}
-		return(stringr::str_c(YMD_to_str(ymd[,1:3]),YMD_to_str(ymd[,4:6]),sep = "-"))
-	}
-	YjMD_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
-		}
-		ymd[,1] = hmRLib::jpera_to_ystr(ymd[,1])
-		return(YMD_to_str(ymd))
-	}
-	YjMDYjMD_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
-		}
-		return(stringr::str_c(YjMD_to_str(ymd[,1:3]),YjMD_to_str(ymd[,4:6]),sep = "-"))
-	}
-	YMeDe_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
-		}
-		ymd[,2] = hmRLib::replace_by(ymd[,2],c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"),1:12)
-		ymd[,3] = stringr::str_remove_all(ymd[,3],"[^0-9]")
-		return(YMD_to_str(ymd))
-	}
-	YMeDeYMeDe_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
-		}
-		return(stringr::str_c(YMeDe_to_str(ymd[,1:3]),YMeDe_to_str(ymd[,4:6]),sep = "-"))
-	}
-	Y2MD_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
-		}
-		y = (Year.beg:Year.end)[hmRLib::find_unique(as.integer(ymd[,1]),Year.beg:Year.end,function(x,y){x==y%%100})]
-		ymd[,1] = dplyr::if_else(is.na(y),NA_character_,sprintf("%d",y))
-		return(YMD_to_str(ymd))
-	}
-	Y2MDY2MD_to_str = function(ymd){
-		if(is.vector(ymd)){
-			ymd = matrix(ymd,nrow=1)
-		}
-		return(stringr::str_c(Y2MD_to_str(ymd[,1:3]),Y2MD_to_str(ymd[,4:6]),sep = "-"))
+
+		opt = opt[!is.na(opt)]
+		cand = stringr::str_extract(
+			pack$datestr,
+			pattern %>%
+				stringr::str_replace_all("\\-",P$to) %>%
+				stringr::str_replace_all("\\.",P$sep) %>%
+				stringr::str_replace_all("_",P$space) %>%
+				stringr::str_replace_all("%Yj@",paste0(P$Y_jp,"\u5e74")) %>%
+				stringr::str_replace_all("%YJ@",paste0(P$Y_JP,"\u5e74")) %>%
+				stringr::str_replace_all("%Y@",paste0(P$Y,"\u5e74")) %>%
+				stringr::str_replace_all("%M@",paste0(P$M,"\u6708")) %>%
+				stringr::str_replace_all("%D@",paste0(P$D,"\u65e5")) %>%
+				stringr::str_replace_all("%Yj",P$Y_jp) %>%
+				stringr::str_replace_all("%YJ",P$Y_JP) %>%
+				stringr::str_replace_all("%Y2",P$Y2) %>%
+				stringr::str_replace_all("%Y",P$Y) %>%
+				stringr::str_replace_all("%Me",P$M_en) %>%
+				stringr::str_replace_all("%De",P$D_en) %>%
+				stringr::str_replace_all("%D2",P$D2) %>%
+				stringr::str_replace_all("%M2",P$M2) %>%
+				stringr::str_replace_all("%M",P$M) %>%
+				stringr::str_replace_all("%D",P$D) %>%
+				stringr::str_replace("^",P$beg) %>%
+				stringr::str_replace("$",P$end) %>%
+				return(),pickup_order) %>% to_str(opt)
+		pos = !is.na(cand)&pack$ans_level>=pack$level
+		pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
+		pack$ans_level[pos] = pack$level
+		return(pack)
 	}
 
-	p = list(
-		Y = "([0-2x][0-9x]{3})",
-		Y2 = "([0-9x]{2})",
-		to = "[~&]",
-		sep = "[\\.\\-\\s/]",
-		M = "([0-2x]?[0-9x])",
-		D = "([0-3x]?[0-9x])",
-		M2 = "([0-2x][0-9x])",
-		D2 = "([0-3x][0-9x])",
-		beg = "(?:^|[^a-z])",
-		end = "(?:$|[^0-9])",
-		Y_JP = sprintf("((?:%s)[0-6x]?[0-9x])",paste0(jpera_traits$jpname,collapse="|")),
-		Y_jp = sprintf("([%s][0-6x]?[0-9x])",stringr::str_to_lower(paste0(jpera_traits$name,collapse=""))),
-		M_en = "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)",
-		D_en = "([0-3x]?[0-9x](?:th|nd|rd)?)",
-		space = "[\\s\\.,]*"
+	pack = list(
+		datestr = datestr,
+		level = Inf,
+		ans = rep(NA_character_,length=length(datestr)),
+		ans_level = rep(Inf,length=length(datestr))
 	)
 
-
-	ans = rep(NA_character_,length=length(str))
-	ans_level = rep(Inf,length=length(str))
-
-
 	#range detect mode
-	if(is.range){
-		level = 0 #yyyy.mm.dd-yyyy.mm.dd
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,p$sep,p$M,p$sep,p$D,p$to,p$Y,p$sep,p$M,p$sep,p$D,p$end),
-											 c(1,2,3,4,5,6)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,"\u5e74",p$M,"\u6708",p$D,"\u65e5",p$to,p$Y,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-											 c(1,2,3,4,5,6)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$D_en,p$space,p$M_en,p$space,p$Y,p$to,p$D_en,p$space,p$M_en,p$space,p$Y,p$end),
-											 c(3,2,1,6,5,4)) %>% YMeDeYMeDe_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$M_en,p$space,p$D_en,p$space,p$Y,p$to,p$M_en,p$space,p$D_en,p$space,p$Y,p$end),
-											 c(3,1,2,6,4,5)) %>% YMeDeYMeDe_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
+	if(use.range){
+		pack$level = 100 #YYYY.M.D-YYYY.M.D
+		pack = try_cand(pack,"%Y.%M.%D-%Y.%M.%D")
+		pack = try_cand(pack,"%Y@%M@%D@-%Y@%M@%D@")
+		pack = try_cand(pack,"%Y_%Me_%De-%Y_%Me_%De")
+		pack = try_cand(pack,"%De_%Me_%Y-%De_%Me_%Y")
+		pack = try_cand(pack,"%Me_%De_%Y-%Me_%De_%Y")
 		if(use.jpera){
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_jp,p$sep,p$M,p$sep,p$D,p$to,p$Y_jp,p$sep,p$M,p$sep,p$D,p$end),
-												 c(1,2,3,4,5,6)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
-
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_jp,"\u5e74",p$M,"\u6708",p$D,"\u65e5",p$to,p$Y_jp,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-												 c(1,2,3,4,5,6)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
-
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_JP,"\u5e74",p$M,"\u6708",p$D,"\u65e5",p$to,p$Y_JP,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-												 c(1,2,3,4,5,6)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
+			pack = try_cand(pack,"%Yj.%M.%D-%Yj.%M.%D")
+			pack = try_cand(pack,"%Yj@%M@%D@-%Yj@%M@%D@")
+			pack = try_cand(pack,"%YJ@%M@%D@-%YJ@%M@%D@")
 		}
 
-		level = 110 #dd.mm.yyyy-dd.mm.yyyy
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$D,p$sep,p$M,p$sep,p$Y,p$to,p$D,p$sep,p$M,p$sep,p$Y,p$end),
-											 c(3,2,1,6,5,4)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+		pack$level = 110
+		pack = try_cand(pack,"%D.%M.%Y-%D.%M.%Y")
 
-		level = 200 #yyyy.mm.dd-mm.dd
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,p$sep,p$M,p$sep,p$D,p$to,p$M,p$sep,p$D,p$end),
-											 c(1,2,3,1,4,5)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,"\u5e74",p$M,"\u6708",p$D,"\u65e5",p$to,p$M,"\u6708",p$D,"\u65e5"),
-											 c(1,2,3,1,4,5)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$D_en,p$space,p$M_en,p$to,p$D_en,p$space,p$M_en,p$space,p$Y,p$end),
-											 c(5,2,1,5,4,3)) %>% YMeDeYMeDe_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$M_en,p$space,p$D_en,p$to,p$M_en,p$space,p$D_en,p$space,p$Y,p$end),
-											 c(5,1,2,5,3,4)) %>% YMeDeYMeDe_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
+		pack$level = 200
+		pack = try_cand(pack,"%Y.%M.%D-%M.%D")
+		pack = try_cand(pack,"%Y@%M@%D@-%M@%D@")
+		pack = try_cand(pack,"%Y_%Me_%De-%Me_%De")
+		pack = try_cand(pack,"%De_%Me-%De_%Me_%Y")
+		pack = try_cand(pack,"%Me_%De-%Me_%De_%Y")
 		if(use.jpera){
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_jp,p$sep,p$M,p$sep,p$D,p$to,p$M,p$sep,p$D,p$end),
-												 c(1,2,3,1,4,5)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
-
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_jp,"\u5e74",p$M,"\u6708",p$D,"\u65e5",p$to,p$M,"\u6708",p$D,"\u65e5"),
-												 c(1,2,3,1,4,5)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
-
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_JP,"\u5e74",p$M,"\u6708",p$D,"\u65e5",p$to,p$M,"\u6708",p$D,"\u65e5"),
-												 c(1,2,3,1,4,5)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
+			pack = try_cand(pack,"%Yj.%M.%D-%M.%D")
+			pack = try_cand(pack,"%Yj@%M@%D@-%M@%D@")
+			pack = try_cand(pack,"%YJ@%M@%D@-%M@%D@")
 		}
 
+		pack$level = 210
+		pack = try_cand(pack,"%D.%M-%D.%M.%Y")
 
-		level = 210 #dd.mm-dd.mm.yyyy
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$D,p$sep,p$M,p$to,p$D,p$sep,p$M,p$sep,p$Y,p$end),
-											 c(5,2,1,5,4,3)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		level = 300 #yyyy.mm.dd-dd
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,p$sep,p$M,p$sep,p$D,p$to,p$D,p$end),
-											 c(1,2,3,1,2,4)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,"\u5e74",p$M,"\u6708",p$D,"\u65e5","?",p$to,p$D,"\u65e5"),
-											 c(1,2,3,1,2,4)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$D_en,p$to,p$D_en,p$space,p$M_en,p$space,p$Y,p$end),
-											 c(4,3,1,4,3,2)) %>% YMeDeYMeDe_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$M_en,p$space,p$D_en,p$to,p$D_en,p$space,p$Y,p$end),
-											 c(4,1,2,4,1,3)) %>% YMeDeYMeDe_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
+		pack$level = 300 #yyyy.mm.dd-dd
+		pack = try_cand(pack,"%Y.%M.%D-%D")
+		pack = try_cand(pack,"%Y@%M@%D@?-%D@")
+		pack = try_cand(pack,"%Y_%Me_%De-%De")
+		pack = try_cand(pack,"%De-%De_%Me_%Y")
+		pack = try_cand(pack,"%Me_%De-%De_%Y")
 		if(use.jpera){
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_jp,p$sep,p$M,p$sep,p$D,p$to,p$D,p$end),
-												 c(1,2,3,1,2,4)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
-
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_jp,"\u5e74",p$M,"\u6708",p$D,"\u65e5","?",p$to,p$D,"\u65e5"),
-												 c(1,2,3,1,2,4)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
-
-			cand = stringr::str_extract(str,
-												 paste0(p$beg,p$Y_JP,"\u5e74",p$M,"\u6708",p$D,"\u65e5","?",p$to,p$D,"\u65e5"),
-												 c(1,2,3,1,2,4)) %>% YjMDYjMD_to_str()
-			pos = !is.na(cand)&ans_level>=level
-			ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-			ans_level[pos] = level
+			pack = try_cand(pack, "%Yj.%M.%D-%D")
+			pack = try_cand(pack, "%Yj@%M@%D@?-%D@")
+			pack = try_cand(pack, "%YJ@%M@%D@?-%D@")
 		}
 
-		level = 310 #dd-dd.mm.yyyy
+		pack$level = 310 #dd-dd.mm.yyyy
+		pack = try_cand(pack, "%D-%D.%M.%Y")
 
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$D,p$to,p$D,p$sep,p$M,p$sep,p$Y,p$end),
-											 c(4,3,1,4,3,2)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+		pack$level = 400 #yyyymmdd-yyyymmdd
+		pack = try_cand(pack, "%Y%M%D2-%Y%M%D2")
 
-		level = 400 #yyyymmdd-yyyymmdd
+		pack$level = 410 #yyyymmdd-mmdd
+		pack = try_cand(pack,"%Y%M%D2-%M%D2")
 
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,p$M,p$D2,p$to,p$Y,p$M,p$D2,p$end),
-											 c(1,2,3,4,5,6)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		level = 500 #yyyymmdd-mmdd
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,p$M,p$D2,p$to,p$M,p$D2,p$end),
-											 c(1,2,3,1,4,5)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		level = 600 #yyyymmdd-dd
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y,p$M,p$D2,p$to,p$D,p$end),
-											 c(1,2,3,1,2,4)) %>% YMDYMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+		pack$level = 420 #yyyymmdd-dd
+		pack = try_cand(pack,"%Y%M%D2-%D")
 	}
 
 	# YYYY.MM.DD
-	level = 1000
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y,p$sep,p$M,p$sep,p$D,p$end),
-										 c(1,2,3)) %>% YMD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-										 c(1,2,3)) %>% YMD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$D_en,p$space,p$M_en,p$space,p$Y,p$end),
-										 c(3,2,1)) %>% YMeDe_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$M_en,p$space,p$D_en,p$space,p$Y,p$end),
-										 c(3,1,2)) %>% YMeDe_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
+	pack$level = 1100
+	pack = try_cand(pack, "%Y.%M.%D")
+	pack = try_cand(pack, "%Y@%M@%D@")
+	pack = try_cand(pack, "%Y_%Me_%De")
+	pack = try_cand(pack, "%De_%Me_%Y")
+	pack = try_cand(pack, "%Me_%De_%Y")
 	if(use.jpera){
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y_jp,p$sep,p$M,p$sep,p$D,p$end),
-											 c(1,2,3)) %>% YjMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y_jp,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-											 c(1,2,3)) %>% YjMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
-
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y_JP,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-											 c(1,2,3)) %>% YjMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+		pack = try_cand(pack,"%Yj.%M.%D")
+		pack = try_cand(pack,"%Yj@%M@%D@")
+		pack = try_cand(pack,"%YJ@%M@%D@")
 	}
 
-	level = 1100 #dd.mm.yyyy
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$D,p$sep,p$M,p$sep,p$Y,p$end),
-										 c(3,2,1)) %>% YMD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
 
-	level = 1200 #yyyymmdd
+	pack$level = 1110 #dd.mm.yyyy
+	pack = try_cand(pack,"%D.%M.%Y")
 
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y,p$M,p$D2,p$end),
-										 c(1,2,3)) %>% YMD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
+	pack$level = 1400 #yyyymmdd
+	pack = try_cand(pack, "%Y%M%D2")
 
+	pack$level = 2000 #yy.mm.dd-yy.mm.dd
+	pack = try_cand(pack, "%Y2.%M.%D-%Y2.%M.%D")
 
-	level = 2000 #yy.mm.dd-yy.mm.dd
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y2,p$sep ,p$M,p$sep,p$D,p$to,p$Y2,p$sep ,p$M,p$sep,p$D,p$end),
-										 c(1,2,3,4,5,6)) %>% Y2MDY2MD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
+	pack$level = 2010 #yy.mm.dd-mm.dd
+	pack = try_cand(pack,"%Y2.%M.%D-%M.%D")
 
-	level = 2010 #yy.mm.dd-mm.dd
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y2,p$sep ,p$M,p$sep,p$D,p$to,p$M,p$sep,p$D,p$end),
-										 c(1,2,3,1,4,5)) %>% Y2MDY2MD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
+	pack$level = 2020 #yy.mm.dd-dd
+	pack = try_cand(pack,"%Y2.%M.%D-%D")
 
-	level = 2020 #yy.mm.dd-dd
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y2,p$sep ,p$M,p$sep,p$D,p$to,p$D,p$end),
-										 c(1,2,3,1,2,4)) %>% Y2MDY2MD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
+	pack$level = 2100 #yy.mm.dd
+	pack = try_cand(pack,"%Y2.%M.%D")
 
-	level = 2100 #yy.mm.dd
+	if(use.range){
+		pack$level = 3000 #yyyy.mm-yyyy.mm
+		pack = try_cand(pack, "%Y.%M-%Y.%M")
+		pack = try_cand(pack, "%Y@%M@-%Y@%M@")
+		pack = try_cand(pack, "%Y_%Me-%Y_%Me")
+		pack = try_cand(pack, "%Me_%Y-%Me_%Y")
+		if(use.jpera){
+			pack = try_cand(pack,"%Yj.%M-%Yj.%M")
+			pack = try_cand(pack,"%Yj@%M@-%Yj@%M@")
+			pack = try_cand(pack,"%YJ@%M@-%YJ@%M@")
+		}
+		pack$level = 3010
+		pack = try_cand(pack,"%M.%Y-%M.%Y")
+		pack$level = 3020 #yyyy.mm-yyyy.mm
+		pack = try_cand(pack, "%Y.%M-%M")
+		pack = try_cand(pack, "%Y@%M@-%M@")
+		pack = try_cand(pack, "%Y_%Me-%Me")
+		pack = try_cand(pack, "%Me_%Me_%Y")
+		if(use.jpera){
+			pack = try_cand(pack,"%Yj.%M-%M")
+			pack = try_cand(pack,"%Yj@%M@-%M@")
+			pack = try_cand(pack,"%YJ@%M@-%M@")
+		}
+		pack$level = 3030
+		pack = try_cand(pack,"%M-%M.%Y")
+	}
 
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y2,p$sep ,p$M,p$sep,p$D,p$end),
-										 c(1,2,3)) %>% Y2MD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-
-	level = 3000 #yyyy.mm-yyyy.mm
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y,p$sep ,p$M,p$to,p$Y,p$sep,p$M,p$end),
-										 c(1,2,3,4,5,6)) %>% Y2MDY2MD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-
-	# YYYY.MM.DD
-	level = 1000
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y,p$sep,p$M,p$sep,p$D,p$end),
-										 c(1,2,3)) %>% YMD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$Y,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-										 c(1,2,3)) %>% YMD_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$D_en,p$space,p$M_en,p$space,p$Y,p$end),
-										 c(3,2,1)) %>% YMeDe_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
-	cand = stringr::str_extract(str,
-										 paste0(p$beg,p$M_en,p$space,p$D_en,p$space,p$Y,p$end),
-										 c(3,1,2)) %>% YMeDe_to_str()
-	pos = !is.na(cand)&ans_level>=level
-	ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-	ans_level[pos] = level
-
+	pack$level = 3100 #yyyy.mm
+	pack = try_cand(pack, "%Y.%M")
+	pack = try_cand(pack, "%Y@%M@")
+	pack = try_cand(pack, "%Y_%Me")
+	pack = try_cand(pack, "%Me_%Y")
 	if(use.jpera){
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y_jp,p$sep,p$M,p$sep,p$D,p$end),
-											 c(1,2,3)) %>% YjMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+		pack = try_cand(pack,"%Yj.%M")
+		pack = try_cand(pack,"%Yj@%M@")
+		pack = try_cand(pack,"%YJ@%M@")
+	}
+	pack$level = 3110
+	pack = try_cand(pack,"%M.%Y")
 
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y_jp,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-											 c(1,2,3)) %>% YjMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+	if(use.range){
+		pack$level = 4000 #yymmdd-yymmdd or yyyymm-yyyymm
+		pack = try_cand(pack, "%Y2%M2%D2-%Y2%M2%D2")
+		pack = try_cand(pack,"%Y%M2-%Y%M2")
 
-		cand = stringr::str_extract(str,
-											 paste0(p$beg,p$Y_JP,"\u5e74",p$M,"\u6708",p$D,"\u65e5"),
-											 c(1,2,3)) %>% YjMD_to_str()
-		pos = !is.na(cand)&ans_level>=level
-		ans[pos] = dplyr::if_else(ans_level[pos]==level,NA_character_,cand[pos])
-		ans_level[pos] = level
+		pack$level = 4010 #yymmdd-mmdd or yyyymm-yyyymm
+		pack = try_cand(pack, "%Y2%M2%D2-%M2%D2")
+
+		pack$level = 4020 #yymmdd-dd or yyyymm-mm
+		pack = try_cand(pack, "%Y2%M2%D2-%D2")
+		pack = try_cand(pack,"%Y%M2-%M2")
+	}
+	pack$level = 4100 #yymmdd
+	pack = try_cand(pack, "%Y2%M2%D2")
+	pack = try_cand(pack, "%Y%M2")
+
+	if(use.range){
+		pack$level = 5000 #yyyy.mm-yyyy.mm
+		pack = try_cand(pack, "%M@%D@-%M@%D@")
+		pack = try_cand(pack, "%Me_%De-%Me_%De")
+		pack = try_cand(pack, "%De_%Me-%De_%Me")
+
+		pack$level = 5020 #yyyy.mm-yyyy.mm
+		pack = try_cand(pack, "%M@%D@?-%D@")
+		pack = try_cand(pack, "%Me_%De-%De")
+		pack = try_cand(pack, "%De-%De_%Me")
 	}
 
-	#TODO: 残る処理は、Y2.M.D-Y2.M.D、Y2.M.D、Y.M-Y.M、Y.M、Y2MD-Y2MD|YM-Y?M、Y2MD|YM、Y | MD-M?D | Y2M-Y2?M、Y | MD | Y2M、Excel
+	pack$level = 5100 #yyyy.mm
+	pack = try_cand(pack, "%M@%D@")
+	pack = try_cand(pack, "%De_%Me")
+	pack = try_cand(pack, "%Me_%De")
 
-	sstr = stringr::str_split(Str,"[~&]")[[1]]
-	#fn(sstr[2],NULL,NULL,NULL)
-	fn = function(Str,Hint,Date.beg,Date.end){
-		ymd = data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_)
-		ans = NULL
+	if(use.range){
+		pack$level = 5200 #yy.mm-yy.mm or mm.dd-mm.dd
+		pack = try_cand(pack, "%Y2.%M-%Y2.%M")
+		pack = try_cand(pack, "%M.%D-%M.%D")
+		pack = try_cand(pack, "%Y2.%M-%M")
+		pack = try_cand(pack, "%M.%D-%D")
+	}
+	pack$level = 5300 #yy.mm or mm.dd
+	pack = try_cand(pack, "%Y2.%M")
+	pack = try_cand(pack, "%M.%D")
 
-		if(is.na(Str))return(ymd)
+	if(use.range){
+		pack$level = 6000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
+		pack = try_cand(pack, "%Y-%Y")
+		pack = try_cand(pack,"%Y2%M2-%Y2%M2")
+		pack = try_cand(pack,"%M%D2-%M%D2")
 
-		if(stringr::str_detect(Str,"[0-9]+\u5e74[0-9]+\u6708[0-9]+\u65e5")){
-			#年月日の場合
-			Str = stringr::str_remove_all(Str,"\\s")
-			if(stringr::str_split(Str,"[~&]")[[1]])
-				if(use.jpera){
-					#年度の場合
-					if(str_detect("\u5e74\u5ea6")){
-						IsFY = TRUE
-						ymd$y = Str %>% stringr::str_extract("(.*[0-9]{1,4})\u5e74\u5ea6",1) %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}else{
-						IsFY = FALSE
-						ymd$y = Str %>% stringr::str_extract("(.*[0-9]{1,4})\u5e74",1) %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}
-				}else{
-					if(str_detect("\u5e74\u5ea6")){
-						IsFY = TRUE
-						ymd$y = Str %>% stringr::str_extract("(.*[0-9]{1,4})\u5e74\u5ea6",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}else{
-						IsFY = FALSE
-						ymd$y = Str %>% stringr::str_extract("(.*[0-9]{1,4})\u5e74",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}
-				}
-			ymd$m = Str %>% stringr::str_extract("([0-9]{1,2})\u6708",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-			ymd$d = Str %>% stringr::str_extract("([0-9]{1,2})\u65e5",1) %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
+		pack$level = 6020 #yymmdd-dd or yyyymm-mm
+		pack = try_cand(pack, "%Y2%M2-%M2")
+		pack = try_cand(pack,"%M%D2-%D2")
+	}
+	pack$level = 6100 #yymmdd
+	pack = try_cand(pack, "%Y")
+	pack = try_cand(pack, "%Y2%M2")
+	pack = try_cand(pack, "%M%D2")
 
-			#二けた表記の場合、可能性のある年で救済
-			ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
+	#try excel
+	pack$level = 10000 #excel date value
+	if(use.exceldate){
+		exceldate.beg = as.integer(Date.beg-exceldate.origin)
+		exceldate.end = as.integer(Date.end-exceldate.origin)
 
-			if(ymd$y %in% c(NA,Candidate_y) & ymd$m %in% c(NA,1:12) & ymd$d %in% c(NA,1:31))return(ymd)
-			return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-		}
-
-		#?やXは未定値として扱うためゼロ置換
-		Str = stringr::str_replace_all(Str,"[?X]","0")
-
-		Str.split = stringr::str_split(Str,"[\\s\\t\\.\\-/,]")[[1]]
-		Str.split = Str.split[Str.split!=""]
-		if(length(Str.split)>=2){
-			#Check English
-			EnMonth.seq = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
-			EnMonth = stringr::str_detect(stringr::str_to_lower(Str.split),paste(EnMonth.seq,collapse="|"))
-			if(sum(EnMonth)==1){
-				for(i in 1:12){
-					if(stringr::str_detect(stringr::str_to_lower(Str.split[EnMonth]),EnMonth.seq[i])){
-						ymd$m = i
-						break
-					}
-				}
-				Str.split = Str.split[!EnMonth]
-
-				if(length(Str.split)>=2){
-					ymd$d = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$y = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
-						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-						ans = ymd
-					}
-
-					ymd$d = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
-						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-						ans = ymd
-					}
-
-					if(!is.null(ans))return(ans)
-				}
-
-				ymd$d = NA_integer_
-				ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				ymd$d = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				ymd$y = NA_integer_
-				if(ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				if(!is.null(ans))return(ans)
-				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}else{
-				if(length(Str.split)>=3){
-					if(use.jpera){
-						ymd$y = Str.split[1] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}else{
-						ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}
-					ymd$m = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$d = Str.split[3] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(0,1:12) & ymd$d %in% c(0,1:31)){
-						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-						#0の場合はNAで埋め込み
-						if(ymd$m==0)ymd$m=NA
-						if(ymd$d==0)ymd$d=NA
-						ans = ymd
-					}
-
-					#3点あるときは、YMDを優先
-					if(!is.null(ans))return(ans)
-
-					if(use.jpera){
-						ymd$y = Str.split[3] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}else{
-						ymd$y = Str.split[3] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					}
-					ymd$m = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$d = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-					ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-					if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
-						if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-						ans = ymd
-					}
-
-					#DMYは一般的ではないが、フルに情報がそろっていればOKとする
-					if(!is.null(ans))return(ans)
-				}
-
-				if(use.jpera){
-					ymd$y = Str.split[1] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				}else{
-					ymd$y = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				}
-				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-				ymd$m = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				ymd$d = NA_integer_
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				if(use.jpera){
-					ymd$y = Str.split[2] %>% hmRLib::jpera_to_ystr() %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				}else{
-					ymd$y = Str.split[2] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				}
-				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-				ymd$m = Str.split[1] %>% stringr::str_remove_all("[^0-9]") %>% as.integer() %>% suppressWarnings()
-				ymd$d = NA_integer_
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				if(!is.null(ans))return(ans)
-				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}
-		}
-
-		Str.int = stringr::str_extract(Str,"^[^0-9]*([0-9]{4,8})[^0-9]*+$",1)
-		if(!is.na(Str.int)){
-			if(stringr::str_length(Str.int)==8){
-				ymd$y = as.integer(stringr::str_sub(Str.int,1,4))
-				ymd$m = as.integer(stringr::str_sub(Str.int,5,6))
-				ymd$d = as.integer(stringr::str_sub(Str.int,7,8))
-
-
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(0,1:12) & ymd$d %in% c(0,1:31)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					#0の場合はNAで埋め込み
-					if(ymd$m==0)ymd$m=NA
-					if(ymd$d==0)ymd$d=NA
-					ans = ymd
-				}
-
-				if(!is.null(ans))return(ans)
-				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}else if(stringr::str_length(Str.int)==6){
-				ymd$y = as.integer(stringr::str_sub(Str.int,1,2))
-				ymd$m = as.integer(stringr::str_sub(Str.int,3,4))
-				ymd$d = as.integer(stringr::str_sub(Str.int,5,6))
-				#y二けたの場合は救済
-				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(0,1:12) & ymd$d %in% c(0,1:31)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					#0の場合はNAで埋め込み
-					if(ymd$m==0)ymd$m=NA
-					if(ymd$d==0)ymd$d=NA
-					ans = ymd
-				}
-
-				if(!is.null(ans))return(ans)
-
-				ymd$y = as.integer(stringr::str_sub(Str.int,1,4))
-				ymd$m = as.integer(stringr::str_sub(Str.int,5,6))
-				ymd$d = NA_integer_
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				if(!is.null(ans))return(ans)
-				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}else if(stringr::str_length(Str.int)==4){
-				ymd$y = as.integer(Str.int)
-				ymd$m = NA_integer_
-				ymd$d = NA_integer_
-				if(ymd$y %in% c(Candidate_y)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				ymd$y = NA_integer_
-				ymd$m = as.integer(stringr::str_sub(Str.int,1,2))
-				ymd$d = as.integer(stringr::str_sub(Str.int,3,4))
-				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-				if(ymd$m %in% c(1:12) & ymd$d %in% c(1:31)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				ymd$y = as.integer(stringr::str_sub(Str.int,1,2))
-				ymd$m = as.integer(stringr::str_sub(Str.int,3,4))
-				ymd$d = NA_integer_
-				ymd$y = purrr::map_int(ymd$y,function(x){if(is.na(x))return(x);if(sum(x==Candidate_y%%100)!=1)return(x);Candidate_y[x==Candidate_y%%100]})
-				if(ymd$y %in% c(Candidate_y) & ymd$m %in% c(1:12)){
-					if(!is.null(ans)) return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-					ans = ymd
-				}
-
-				if(!is.null(ans))return(ans)
-				return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
-			}
-
-			if(use.exceldate){
-				exceldate.beg = as.integer(Date.beg-exceldate.origin)
-				exceldate.end = as.integer(Date.end-exceldate.origin)
-
-				dateval = as.integer(Str.int) %>% suppressWarnings()
-				if(exceldate.beg<= dateval & dateval <=exceldate.end){
-					date = exceldate.origin+dateval
-					ymd$y = format(date,"%Y") %>% as.integer()
-					ymd$m = format(date,"%m") %>% as.integer()
-					ymd$d = format(date,"%d") %>% as.integer()
-					return(ymd)
-				}
-			}
-		}
-		return(data.frame(y=NA_integer_,m=NA_integer_,d=NA_integer_))
+		dateval = pack$datestr %>% as.integer() %>% suppressWarnings()
+		cand = dplyr::if_else(exceldate.beg<= dateval & dateval <=exceldate.end,strftime(exceldate.origin+dateval,"%Y.%m.%d"),NA_character_)
+		pos = !is.na(cand)&pack$ans_level>=pack$level
+		pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
+		pack$ans_level[pos] = pack$level
 	}
 
-	return(purrr::map_dfr(str, fn))
+	return(pack$ans)
+}
+
+#' transform string to ymd data table.
+#' @description transform string to ymd data table like data.frame(y=2022,m=5,d=12) or pair of such data.frame. NA will be filled for uncertain elements.
+#' @param datestr target character or sequence of character.
+#' @param Date.beg potentially start date; used for validation and estimation.
+#' @param Date.end potentially end date; used for validation and estimation.
+#' @param strict return NA if read datestr is out of Date.beg-Date.end range
+#' @param use.range Allow range date format
+#' @param use.jpera Allow Japanese era case (e.g., R2.4.5 or 令和3年4月11日).
+#' @param use.exceldate Allow to check the value which is originally excel date but occationally transformed to normal value.
+#' @param exceldate.origin Origin of excel date. In default, it is 1900-01-01 if the file is originally created on Windows and 1904-01-01 on Mac.
+#' @return transformed data.frame
+#' @importFrom magrittr %>%
+#' @export
+datestr_to_ymd = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+	table = datestr_format_full(datestr,Date.beg,Date.end,strict,use.range,use.jpera,use.exceldate,exceldate.origin) %>%
+		stringr::str_split("[\\.\\-]",simplify = TRUE) %>%
+		return()
+
+	if(ncol(table)==3){
+		ans = data.frame(
+			y=as.integer(table[,1]) %>% suppressWarnings(),
+			m=as.integer(table[,2]) %>% suppressWarnings(),
+			d=as.integer(table[,3]) %>% suppressWarnings()
+		)
+	}else if(ncol(table)==6){
+		beg = data.frame(
+			y=as.integer(table[,1]) %>% suppressWarnings(),
+			m=as.integer(table[,2]) %>% suppressWarnings(),
+			d=as.integer(table[,3]) %>% suppressWarnings()
+		)
+		end = data.frame(
+			y=as.integer(table[,4]) %>% suppressWarnings(),
+			m=as.integer(table[,5]) %>% suppressWarnings(),
+			d=as.integer(table[,6]) %>% suppressWarnings()
+		)
+		endna = is.na(end$y) & is.na(end$m) & is.na(end$d)
+		end[endna,]=beg[endna,]
+		ans = list(beg=beg,end=end)
+	}
+	return(ans)
 }
 
 #' transform ymd data table to string.
 #' @description transform ymd data table like data.frame(y=2022,m=5,d=12) to string. NA will be filled by na.fill.
 #' @param ymd data.frame with column y, m and d for year, month and day.
-#' @param format output format with y,Y,m and d.
+#' @param dateformat output format with Y, y, M, m, D, d. See detais.
+#' @param range_sep separation of range if ymd is range format.
 #' @param na.fill filled character for missing element.
+#' @param mode determining data filling mode = c("full","maximum","compact","short","minimum"). see detail.
 #' @return transformed str
+#' @details
+#' format of each mode is like the following.
+#' 	maximum: always range mode e.g., 2012.03.04-2012.03.04 2023.04.05-2023.05.06
+#' 	full (default): range mode is used only when beg and end is different e.g., 2012.03.04 2023.04.05-2023.05.06
+#' 	compact: range mode remove duplicating information e.g., 2023.04.05-05.06 2023.04.??
+#' 	minimum: (information loss can occur depending on dateformat) remove NA and duplicating info e.g., 2023.04-05
+#' dateformat can use the following special characters.
+#'		(percent)Yj(at): NOT WORKING
+#'		(percent)YJ(at): NOT WORKING
+#'		(percent)Y(at): YYYY年
+#'		(percent)y(at): YY年
+#'		(percent)M(at): MM月
+#'		(percent)m(at): M月
+#'		(percent)D(at): DD日
+#'		(percent)d(at): D日
+#'		(percent)Y: YYYY
+#'		(percent)y: YY
+#'		(percent)M: MM
+#'		(percent)m: M
+#'		(percent)D: DD
+#'		(percent)d: D
 #' @importFrom magrittr %>%
 #' @export
-ymd_to_str = function(ymd, format="%Y.%m.%d", na.fill="?"){
-	format %>%
-		stringr::str_replace_all("%%","%!") %>%
-		stringr::str_replace_all("%Y",dplyr::if_else(is.na(ymd$y),strrep(na.fill,4),sprintf("%04d",ymd$y))) %>%
-		stringr::str_replace_all("%y",dplyr::if_else(is.na(ymd$y),strrep(na.fill,2),sprintf("%02d",ymd$y))) %>%
-		stringr::str_replace_all("%m",dplyr::if_else(is.na(ymd$m),strrep(na.fill,2),sprintf("%02d",ymd$m))) %>%
-		stringr::str_replace_all("%d",dplyr::if_else(is.na(ymd$d),strrep(na.fill,2),sprintf("%02d",ymd$d))) %>%
-		stringr::str_replace_all("%!","%") %>%
-		return()
+ymd_to_datestr = function(ymd, dateformat="%Y.%M.%D", range_sep = "-", na.fill="?",mode = "full"){
+	if(!is.null(ymd$beg) & !is.null(ymd$end)){
+		if(mode=="maximum"){
+			return(paste0(ymd_to_datestr(ymd$beg,dateformat,range_sep,na.fill,mode),
+							  range_sep,
+							  ymd_to_datestr(ymd$beg,dateformat,range_sep,na.fill,mode)))
+		}else if(mode=="full"){
+			beg = ymd_to_datestr(ymd$beg,dateformat,range_sep,na.fill,mode)
+			end = ymd_to_datestr(ymd$end,dateformat,range_sep,na.fill,mode)
+			return(
+				dplyr::if_else(beg==end,beg,paste0(beg,range_sep,end))
+			)
+		}else if(mode=="compact" | mode=="minimum"){
+			beg = ymd_to_datestr(ymd$beg,dateformat,range_sep,na.fill,mode)
+			endYMD = ymd_to_datestr(ymd$end,dateformat,range_sep,na.fill,mode)
+			endMD = ymd_to_datestr(ymd$end,stringr::str_remove(dateformat,"[^@a-zA-Z0-9]*%[Yy][^%]*"),range_sep,na.fill,mode)
+			endD = ymd_to_datestr(ymd$end,stringr::str_remove(dateformat,"[^@a-zA-Z0-9]*%[Yy][^%]*") %>% stringr::str_remove("[^@a-zA-Z0-9]*%[Mm][^%]*"),range_sep,na.fill,mode)
+
+			return(
+				dplyr::case_when(
+					ymd$beg$y!=ymd$end$y ~ paste0(beg,range_sep,endYMD),
+					ymd$beg$m!=ymd$end$m ~ paste0(beg,range_sep,endMD),
+					ymd$beg$d!=ymd$end$d ~ paste0(beg,range_sep,endD),
+					TRUE ~ beg
+				)
+			)
+		}
+	}else{
+		if(mode == "minimum"){
+			endYMD = ymd_to_datestr(ymd,dateformat,range_sep,na.fill,"full")
+			endMD = ymd_to_datestr(ymd,stringr::str_remove(dateformat,"%[Yy][^%]*"),range_sep,na.fill,"full")
+			endYM = ymd_to_datestr(ymd,stringr::str_remove(dateformat,"[^@a-zA-Z0-9]*%[Dd][^%]*"),range_sep,na.fill,"full")
+			endY = ymd_to_datestr(ymd,stringr::str_remove(dateformat,"[^@a-zA-Z0-9]*%[Dd][^%]*") %>% stringr::str_remove("[^@a-zA-Z0-9]*%[Mm][^%]*"),range_sep,na.fill,"full")
+
+			dplyr::case_when(
+				!(is.na(ymd$y)|is.na(ymd$m)|is.na(ymd$d)) ~ endYMD,
+				!(is.na(ymd$y)|is.na(ymd$m)) ~ endYM,
+				!(is.na(ymd$m)|is.na(ymd$d)) ~ endMD,
+				!(is.na(ymd$y)) ~ endY,
+				TRUE ~ NA_character_
+			)
+		}else{
+			dateformat %>%
+				stringr::str_replace_all("%%","%!") %>%
+				stringr::str_replace_all("%Y@",dplyr::if_else(!is.na(ymd$y),sprintf("%d\u5e74",ymd$y),sprintf("%s\u5e74",strrep(na.fill,4)))) %>%
+				stringr::str_replace_all("%y@",dplyr::if_else(!is.na(ymd$y),sprintf("%02d\u5e74",ymd$y%%100),sprintf("%s\u5e74",strrep(na.fill,2)))) %>%
+				stringr::str_replace_all("%M@",dplyr::if_else(!is.na(ymd$m),sprintf("%02d\u6708",ymd$m),sprintf("%s\u6708",strrep(na.fill,2)))) %>%
+				stringr::str_replace_all("%D@",dplyr::if_else(!is.na(ymd$d),sprintf("%02d\u65e5",ymd$d),sprintf("%s\u65e5",strrep(na.fill,2)))) %>%
+				stringr::str_replace_all("%m@",dplyr::if_else(!is.na(ymd$m),sprintf("%d\u6708",ymd$m),sprintf("%s\u6708",strrep(na.fill,1)))) %>%
+				stringr::str_replace_all("%d@",dplyr::if_else(!is.na(ymd$d),sprintf("%d\u65e5",ymd$d),sprintf("%s\u65e5",strrep(na.fill,1)))) %>%
+				stringr::str_replace_all("%Y",dplyr::if_else(!is.na(ymd$y),sprintf("%d",ymd$y),sprintf("%s",strrep(na.fill,4)))) %>%
+				stringr::str_replace_all("%y",dplyr::if_else(!is.na(ymd$y),sprintf("%02d",ymd$y%%100),sprintf("%s",strrep(na.fill,2)))) %>%
+				stringr::str_replace_all("%M",dplyr::if_else(!is.na(ymd$m),sprintf("%02d",ymd$m),sprintf("%s",strrep(na.fill,2)))) %>%
+				stringr::str_replace_all("%D",dplyr::if_else(!is.na(ymd$d),sprintf("%02d",ymd$d),sprintf("%s",strrep(na.fill,2)))) %>%
+				stringr::str_replace_all("%m",dplyr::if_else(!is.na(ymd$m),sprintf("%d",ymd$m),sprintf("%s",strrep(na.fill,1)))) %>%
+				stringr::str_replace_all("%d",dplyr::if_else(!is.na(ymd$d),sprintf("%d",ymd$d),sprintf("%s",strrep(na.fill,1)))) %>%
+				stringr::str_replace_all("%!","%") %>%
+				return()
+		}
+	}
+}
+
+#' formatting datastr table to string.
+#' @description formatting datastr by using datestr_to_ymd and ymd_to_datestr
+#' @param datestr target character or sequence of character.
+#' @param dateformat output format with Y, M, D, y, m, d
+#' @param range_sep separation of range if ymd is range format.
+#' @param na.fill filled character for missing element.
+#' @param mode determining data filling mode = c("full","maximum","compact","short","minimum"). see detail.
+#' @param Date.beg potentially start date; used for validation and estimation.
+#' @param Date.end potentially end date; used for validation and estimation.
+#' @param strict return NA if read str is out of Date.beg-Date.end range
+#' @param use.range Allow range date format
+#' @param use.jpera Allow Japanese era case (e.g., R2.4.5 or 令和3年4月11日).
+#' @param use.exceldate Allow to check the value which is originally excel date but occationally transformed to normal value.
+#' @param exceldate.origin Origin of excel date. In default, it is 1900-01-01 if the file is originally created on Windows and 1904-01-01 on Mac.
+#' @return transformed str
+#' @details
+#' format of each mode is like the following.
+#' 	maximum: always range mode e.g., 2012.03.04-2012.03.04 2023.04.05-2023.05.06
+#' 	full (default): range mode is used only when beg and end is different e.g., 2012.03.04 2023.04.05-2023.05.06
+#' 	compact: range mode remove duplicating information e.g., 2023.04.05-05.06 2023.04.??
+#' 	minimum: (information loss can occur depending on dateformat) remove NA and duplicating info e.g., 2023.04-05
+#' dateformat can use the following special characters.
+#'		(percent)Yj(at): NOT WORKING
+#'		(percent)YJ(at): NOT WORKING
+#'		(percent)Y(at): YYYY年
+#'		(percent)y(at): YY年
+#'		(percent)M(at): MM月
+#'		(percent)m(at): M月
+#'		(percent)D(at): DD日
+#'		(percent)d(at): D日
+#'		(percent)Y: YYYY
+#'		(percent)y: YY
+#'		(percent)M: MM
+#'		(percent)m: M
+#'		(percent)D: DD
+#'		(percent)d: D
+#' @importFrom magrittr %>%
+#' @export
+datestr_format = function(datestr, dateformat="%Y.%M.%D", range_sep = "-", na.fill="?",mode = "full",Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+	datestr %>%
+		datestr_to_ymd(Date.beg,Date.end,strict,use.range,use.jpera,use.exceldate,exceldate.origin) %>%
+		ymd_to_datestr(dateformat,range_sep,na.fill,mode)
 }
