@@ -93,7 +93,7 @@ str_to_han = function(x){
 		str_alphabet_to_han() %>%
 		str_number_to_han() %>%
 		str_symbol_to_han() %>%
-		stringr::str_remove_all("\u3000","\\s") %>%
+		stringr::str_replace_all("\u3000"," ") %>%
 		return()
 }
 

@@ -25,7 +25,10 @@ jpera_to_date = function(str, tryFormats = c("%E-%m-%d", "%E.%m.%d"),...){
 	)
 	jperaFormats = stringr::str_replace_all(jperaFormats, "%E",pattern)
 	jperaFormats = sprintf("^%s$",jperaFormats)
-	str = stringr::str_remove(stringr::str_remove(str,"^\\s*"),"\\s*$")
+	str = str %>%
+		stringr::str_remove("^\\s*") %>%
+		stringr::str_remove("\\s*$") %>%
+		return()
 
 	Match = stringr::str_match_all(str,pattern)
 	for(i in 1:length(str)){
