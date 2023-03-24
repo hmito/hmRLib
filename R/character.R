@@ -75,11 +75,10 @@ str_symbol_to_han = function(x){
 					'(){}[]<>""!?,./@#$%^&*',
 					x)
 	# ‘’
-	x <- chartr("\u30fc\uff5e\uff1d\uff3f\uff0b\uff5c\uffe5\u2018",
+	x <- chartr("\u2015\uff5e\uff1d\uff3f\uff0b\uff5c\uffe5\u2018",
 					"-~=_+|\\'",
 					x)
 	x <- chartr("\u2019","'",x)
-	x <- chartr("\u2015","-",x)
 	return(x)
 }
 
