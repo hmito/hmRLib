@@ -117,6 +117,7 @@ jpera_to_ystr = function(str){
 #' @importFrom magrittr %>%
 #' @export
 datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+	if(length(datestr)==0)return(character(0))
 	# basic character update
 	datestr = datestr %>%
 		hmRLib::str_to_han() %>%
@@ -594,6 +595,8 @@ datestr_to_ymd = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TR
 		endna = is.na(end$y) & is.na(end$m) & is.na(end$d)
 		end[endna,]=beg[endna,]
 		ans = list(beg=beg,end=end)
+	}else{
+		ans = rep(NA_character_,length = length(datestr))
 	}
 	return(ans)
 }
@@ -630,6 +633,7 @@ datestr_to_ymd = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TR
 #' @importFrom magrittr %>%
 #' @export
 ymd_to_datestr = function(ymd, dateformat="%Y.%M.%D", range_sep = "-", na.fill="?",mode = "full"){
+	if(length(ymd)<=1)return(rep(NA_character_,length=length(ymd)))
 	if(!is.null(ymd$beg) & !is.null(ymd$end)){
 		if(mode=="maximum"){
 			return(paste0(ymd_to_datestr(ymd$beg,dateformat,range_sep,na.fill,mode),
@@ -730,7 +734,12 @@ ymd_to_datestr = function(ymd, dateformat="%Y.%M.%D", range_sep = "-", na.fill="
 #' @importFrom magrittr %>%
 #' @export
 datestr_format = function(datestr, dateformat="%Y.%M.%D", range_sep = "-", na.fill="?",mode = "full",Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
-	datestr %>%
-		datestr_to_ymd(Date.beg,Date.end,strict,use.range,use.jpera,use.exceldate,exceldate.origin) %>%
-		ymd_to_datestr(dateformat,range_sep,na.fill,mode)
+	if(length(datestr)==0)return(character())
+	else{
+		return(
+			datestr %>%
+				datestr_to_ymd(Date.beg,Date.end,strict,use.range,use.jpera,use.exceldate,exceldate.origin) %>%
+				ymd_to_datestr(dateformat,range_sep,na.fill,mode)
+		)
+	}
 }
