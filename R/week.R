@@ -33,7 +33,7 @@ ymd_to_weekno = function(year,month,day){
 #' @return Week number
 #' @export
 yw_to_weekno = function(year,week){
-	date_to_weekno(sprintf("%04d-01-04",year)) -1 + week
+	date_to_weekno(as.Date(sprintf("%04d-01-04",year))) -1 + week
 }
 
 #' Calculate date range from week number
