@@ -45,9 +45,10 @@ file.dir = function(filepath){
 #' @param filepath file path (character)
 #' @param backup backup directory name; ignored if backup.dir is defined.
 #' @param backup.dir backup directory path; default is the same directory of given file.
+#' @param timeformat set backup head name.
 #' @return filepath
 #' @export
-file.backup = function(filepath, backup = "bak", backup.dir = NULL){
+file.backup = function(filepath, backup = "bak", backup.dir = NULL,timeformat = "%y%m%d_%H%M%S_"){
 	if(!file.exists(filepath))return(filepath)
 
 	filedir = file.dir(filepath)
@@ -56,6 +57,10 @@ file.backup = function(filepath, backup = "bak", backup.dir = NULL){
 		backup.dir = paste0(filedir,"/",backup)
 	}
 	dir.create(backup.dir,recursive = TRUE,showWarnings = FALSE)
-	file.copy(filepath, sprintf("%s/%s_%s", backup.dir,format(Sys.time(), "%y%m%d_%H%M%S"),filename_ext))
+	if(is.na(timeformat)||length(timeformat)==0||timeformat==""){
+		file.copy(filepath, sprintf("%s/%s", backup.dir,filename_ext))
+	}else{
+		file.copy(filepath, sprintf("%s/%s%s", backup.dir,format(Sys.time(), timeformat),filename_ext))
+	}
 	return(filepath)
 }

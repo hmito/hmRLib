@@ -138,3 +138,55 @@ match.order.reduce = function(from,fromval,trg,ini=0,func=sum){
 	}
 	return(trgval)
 }
+
+#' Replace elements by other values
+#' @param target target vector, matrix or other types
+#' @param from the element values which should be replaced
+#' @param to the values which should be set for the replaced elements
+#' @param other if it is not NULL value, the target elements which is not hit to any of from values are replaced by other.
+#' @return replaced results
+#' @export
+replace_by = function(target, from, to, other=NULL){
+	if(length(to)!=1 & length(to)!=length(from))	warning('in replace_by: "from" and "to" have different length.')
+	to = rep(to,length=length(from))
+	ok = target == target
+	if(!is.null(other)){
+		if(is.vector(target)){
+			ans = rep(other,length=length(target))
+		}else if(is.matrix(target)){
+			ans = matrix(other, nrow=nrow(target),ncol=ncol(target))
+		}else{
+			stop('in replace_by: target should be vector or matrix if other is defined.')
+		}
+	}else{
+		ans = target
+	}
+	for(i in 1:length(from)){
+		pos = target==from[i]
+		ans[pos & ok]=to[i]
+		ok = ok & !pos
+	}
+
+	return(ans)
+}
+#' Select elements depending on thresholds
+#' @param target target vector, matrix or other types
+#' @param thresholds the threshold values (should be sorted)
+#' @param to the values which should be set depending on the thresholds
+#' @return replaced results
+#' @export
+replace_by_threshold = function(target, thresholds, to){
+	if(length(to)!=length(thresholds)+1)	warning('in replace_by_threshold: the length of "to" should be equal to the length of "threshold" + 1.')
+	to = rep(to,length=length(thresholds)+1)
+	if(is.vector(target)){
+		ans = rep(to[1],length=length(target))
+	}else if(is.matrix(target)){
+		ans = matrix(to[1], nrow=nrow(target),ncol=ncol(target))
+	}else{
+		stop('in replace_by_threshold: target should be vector or matrix if other is defined.')
+	}
+	for(i in 1:length(thresholds)){
+		ans[target >= thresholds[i]] = to[i+1]
+	}
+	return(ans)
+}

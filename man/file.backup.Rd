@@ -4,7 +4,12 @@
 \alias{file.backup}
 \title{Backup given file}
 \usage{
-file.backup(filepath, backup = "bak", backup.dir = NULL)
+file.backup(
+  filepath,
+  backup = "bak",
+  backup.dir = NULL,
+  timeformat = "\%y\%m\%d_\%H\%M\%S_"
+)
 }
 \arguments{
 \item{filepath}{file path (character)}
@@ -12,6 +17,8 @@ file.backup(filepath, backup = "bak", backup.dir = NULL)
 \item{backup}{backup directory name; ignored if backup.dir is defined.}
 
 \item{backup.dir}{backup directory path; default is the same directory of given file.}
+
+\item{timeformat}{set backup head name.}
 }
 \value{
 filepath
