@@ -135,7 +135,6 @@ file.backup = function(filepath, backup = "bak", backup.dir = NULL,timeformat = 
 #' @return loaded file
 #' @export
 cache = function(expr,path,expire=NULL,required_ver=NULL){
-	expr = substitute(expr)
 	now = Sys.time()
 
 	if(length(path)>0){
@@ -147,7 +146,7 @@ cache = function(expr,path,expire=NULL,required_ver=NULL){
 		}
 	}
 
-	rds = list(dat = eval(expr), time=now, ver=required_ver)
+	rds = list(dat = expr, time=now, ver=required_ver)
 	if(length(path)>0)saveRDS(rds,path)
 	return(rds$dat)
 }
