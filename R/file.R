@@ -1,3 +1,13 @@
+#' Get file name without extension
+#' @description Get file name without extension from file path.
+#' @param filepath file path (character)
+#' @return file name of given file path.
+#' @importFrom stringr str_remove
+#' @export
+file.name = function(filepath){
+	str_remove(file.remove_dir(filepath),"\\.[^\\.]+$")
+}
+
 #' Get file extension
 #' @description Get file extension from file path.
 #' @param filepath file path (character)
@@ -10,24 +20,27 @@ file.ext = function(filepath){
 			 stringr::str_replace(filepath,".+\\.([^/\\\\\\.]+)$","\\1"),"")
 }
 
-#' Get file name with extension
-#' @description Get file name with extension from file path.
+#' Get dir and name without extension
+#' @description Remove ext part from the path
 #' @param filepath file path (character)
-#' @return file name with extension of given file path.
-#' @importFrom stringr str_remove
+#' @return extension of given file path.
+#' @importFrom stringr str_detect
+#' @importFrom stringr str_replace
 #' @export
-file.name_ext = function(filepath){
-	str_remove(filepath,"^.+[/\\\\]+")
+file.remove_ext = function(filepath){
+	stringr::str_remove(filepath,"\\.([^/\\\\\\.]+)$")
 }
 
-#' Get file name without extension
-#' @description Get file name without extension from file path.
+#' Replace without extension
+#' @description Remove ext part from the path
 #' @param filepath file path (character)
-#' @return file name of given file path.
-#' @importFrom stringr str_remove
+#' @param ext new extension
+#' @return extension of given file path.
+#' @importFrom stringr str_detect
+#' @importFrom stringr str_replace
 #' @export
-file.name = function(filepath){
-	str_remove(file.name_ext(filepath),"\\.[^\\.]+$")
+file.replace_ext = function(filepath,ext){
+	stringr::str_c(file.remove_ext(filepath),".",ext)
 }
 
 #' Get directory of file
@@ -38,6 +51,54 @@ file.name = function(filepath){
 #' @export
 file.dir = function(filepath){
 	str_remove(filepath,"[/\\\\]+[^/\\\\]+$")
+}
+
+#' Get file name with extension
+#' @description Get file name with extension from file path.
+#' @param filepath file path (character)
+#' @return file name with extension of given file path.
+#' @importFrom stringr str_remove
+#' @export
+file.remove_dir= function(filepath){
+	str_remove(filepath,"^.+[/\\\\]+")
+}
+
+#' Check whether the given path is absolute path or not.
+#' @description Return logical value which represents whether the given path is absolute path or not.
+#' @param filepath file path (character)
+#' @return logical: true if it is absolute path.
+#' @export
+file.is_abspath = function(filepath){
+		return(stringr::str_detect(filepath,"(:|^)/"))
+}
+
+#' Return absolute path
+#' @description Return logical value which represents whether the given path is absolute path or not.
+#' @param filepath file path (character)
+#' @param filedir file directory
+#' @param strict logical: TRUE ~ remove unnecessary reference, e.g., "a/b/../c".
+#' @return absolute file path
+#' @export
+file.abspath = function(filepath,filedir,strict=TRUE){
+	filepath = stringr::str_replace_all(filepath,"(^|[^\\.])(\\./)+","\\1")
+	abspath = dplyr::if_else(
+		file.is_abspath(filepath),
+		filepath,
+		stringr::str_c(
+			stringr::str_remove(
+				filedir,sprintf("(/[^/]+){%d}$",tidyr::replace_na(stringr::str_count(stringr::str_extract(filepath,"^(\\.\\./)+"),"\\.\\."),0))
+			),
+			"/",
+			stringr::str_remove(filepath,"^(\\.\\./)+")
+		)
+	)
+	if(strict){
+		while(any(stringr::str_detect(abspath,"./\\.\\."))){
+			abspath = stringr::str_remove(abspath,"(?!/\\.\\./)/[^/]+/\\.\\.")
+		}
+		abspath[stringr::str_detect(abspath,"^/\\.\\.($|/)")]=NA_character_
+	}
+	return(abspath)
 }
 
 #' Backup given file
@@ -52,7 +113,7 @@ file.backup = function(filepath, backup = "bak", backup.dir = NULL,timeformat = 
 	if(!file.exists(filepath))return(filepath)
 
 	filedir = file.dir(filepath)
-	filename_ext = file.name_ext(filepath)
+	filename_ext = file.remove_dir(filepath)
 	if(is.null(backup.dir)){
 		backup.dir = paste0(filedir,"/",backup)
 	}
