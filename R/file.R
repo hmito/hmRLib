@@ -125,3 +125,29 @@ file.backup = function(filepath, backup = "bak", backup.dir = NULL,timeformat = 
 	}
 	return(filepath)
 }
+
+#' Cache expression result
+#' @description expression result is saved as rds with time stamp. If cached file already exist, it try to use it.
+#' @param expr expression for caching
+#' @param path path for cache file
+#' @param expire diftim until the cache is expired, e.g. as.difftime function with unit argument.
+#' @param required_ver integer for controlling file format version; smaller version file is always ignored.
+#' @return loaded file
+#' @export
+cache = function(expr,path,expire=NULL,required_ver=NULL){
+	expr = substitute(expr)
+	now = Sys.time()
+
+	if(length(path)>0){
+		if(file.exists(path) && (length(expire)==0 || expire>=0)){
+			rds = readRDS(path)
+			if((length(required_ver)==0 || (!length(rds$ver) && rds$ver >= required_ver)) || (length(expire)==0 || rds$time + expire > now)){
+				return(rds$dat)
+			}
+		}
+	}
+
+	rds = list(dat = eval(expr), time=now, ver=required_ver)
+	if(length(path)>0)saveRDS(rds,path)
+	return(rds$dat)
+}

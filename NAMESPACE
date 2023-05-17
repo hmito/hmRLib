@@ -3,6 +3,7 @@
 S3method(plot,null)
 export(as_os_style_path)
 export(assert)
+export(cache)
 export(callstack_info)
 export(callstack_message)
 export(callstack_trace)
