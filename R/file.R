@@ -101,6 +101,17 @@ file.abspath = function(filepath,filedir,strict=TRUE){
 	return(abspath)
 }
 
+#' Return function which generate absolute path of the focal directory
+#' @description Returned function generates absolute path of the given directory, base_dir.
+#' @param filedir file directory
+#' @return function of absolute path generator
+#' @export
+file.at = function(filedir){
+	function(path,...){
+		file.abspath(sprintf(path,...),filedir)
+	}
+}
+
 #' Backup given file
 #' @description Make backup of the given file in backup directory
 #' @param filepath file path (character)
