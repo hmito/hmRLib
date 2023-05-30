@@ -151,7 +151,7 @@ cache = function(expr,path,expire=NULL,required_ver=NULL){
 	if(length(path)>0){
 		if(file.exists(path) && (length(expire)==0 || expire>=0)){
 			rds = readRDS(path)
-			if((length(required_ver)==0 || (!length(rds$ver) && rds$ver >= required_ver)) || (length(expire)==0 || rds$time + expire > now)){
+			if((length(required_ver)==0 || (length(rds$ver)!=0 && rds$ver >= required_ver)) && (length(expire)==0 || rds$time + expire > now)){
 				return(rds$dat)
 			}
 		}
