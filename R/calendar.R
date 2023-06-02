@@ -780,8 +780,9 @@ datestr_format_full2 = function(datestr, Date.beg = NULL, Date.end = NULL, stric
 
 		opt = opt[!is.na(opt)]
 
-		sprintf("try_pattern(pack,\"%s\",c(%s),%s)",
-				  pickup_pattern %>% str_replace("\\","\\"),
+		sprintf("# %s\ntry_pattern(pack,\"%s\",c(%s),%s)\n",
+				  pattern,
+				  pickup_pattern %>% str_replace_all("\\\\","\\\\\\\\"),
 				  paste0(pickup_order,collapse =","),
 				  ifelse(length(opt)==0,"character(0)",paste0("c(\"",paste0(opt,collapse ="\",\""),"\")"))
 		) %>% cat()
