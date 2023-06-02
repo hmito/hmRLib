@@ -115,8 +115,7 @@ jpera_to_ystr = function(str){
 #' @param exceldate.origin Origin of excel date. In default, it is 1900-01-01 if the file is originally created on Windows and 1904-01-01 on Mac.
 #' @return transformed date string like "2021.03.04-2023.05.31"
 #' @importFrom magrittr %>%
-#' @export
-datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+datestr_format_full.fullcode = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
 	if(length(datestr)==0)return(character(0))
 	# basic character update
 	datestr = datestr %>%
@@ -556,7 +555,119 @@ datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict
 
 	return(pack$ans)
 }
-datestr_format_full2 = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
+
+#' convert script
+#' @description convert script
+#' @param script script
+#' @return none
+#' @importFrom magrittr %>%
+datestr_hard_cording = function(script){
+	try_cand_caller = function(pattern){
+		# これを正規表現に放り込むので、エスケープのエスケープが必須
+		P = list(
+			Y = "([0-2x][0-9x]{3})",
+			Y2 = "([0-9x]{2})",
+			to = "[~&]",
+			sep = "[\\\\.\\\\-\\\\s]",
+			space = "[\\\\s\\\\.,]*",
+			M = "([0-2x]?[0-9x])",
+			D = "([0-3x]?[0-9x])",
+			M2 = "([0-2x][0-9x])",
+			D2 = "([0-3x][0-9x])",
+			beg = "(?:^|[^a-z0-9])",
+			end = "(?:$|[^a-z0-9])",
+			Y_JP = sprintf("((?:%s)[0-6x]?[0-9x])",paste0(jpera_traits$jpname,collapse="|")),
+			Y_jp = sprintf("([%s][0-6x]?[0-9x])",stringr::str_to_lower(paste0(jpera_traits$name,collapse=""))),
+			M_en = "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)",
+			D_en = "([0-3x]?[0-9x](?:th|nd|rd)?)"
+		)
+
+		opt = c(
+			dplyr::if_else(stringr::str_detect(pattern,"%Yj|%YJ"),"Yj",NA_character_),
+			dplyr::if_else(stringr::str_detect(pattern,"%Y2"),"Y2",NA_character_),
+			dplyr::if_else(stringr::str_detect(pattern,"%Me"),"Me",NA_character_),
+			dplyr::if_else(stringr::str_detect(pattern,"%De"),"De",NA_character_),
+			dplyr::case_when(
+				!stringr::str_detect(pattern,"%M|%D")~"-MD",
+				!stringr::str_detect(pattern,"%D")~"-D",
+				!stringr::str_detect(pattern,"%Y")~"-Y",
+				TRUE ~ NA_character_
+			)
+		)
+
+		pickup = stringr::str_extract_all(pattern,"%[YMD]",simplify = TRUE) %>% as.vector()
+		second_apper = duplicated(pickup)
+		if(any(second_apper)){
+			to_str = "YMDYMD_to_str"
+			pickup[second_apper] = stringr::str_c(pickup[second_apper],"2")
+			pickup_order = hmRLib::find_unique(c("%Y","%M","%D","%Y2","%M2","%D2"),pickup)
+			pickup_order[c(4,5,6)][is.na(pickup_order[c(4,5,6)])]=pickup_order[c(1,2,3)][is.na(pickup_order[c(4,5,6)])]
+			pickup_order = pickup_order[!is.na(pickup_order)]
+		}else{
+			to_str = "YMD_to_str"
+			pickup_order = hmRLib::find_unique(c("%Y","%M","%D"),pickup)
+			pickup_order = pickup_order[!is.na(pickup_order)]
+		}
+
+		pickup_pattern = pattern %>%
+			stringr::str_replace_all("\\-",P$to) %>%
+			stringr::str_replace_all("\\.",P$sep) %>%
+			stringr::str_replace_all("_",P$space) %>%
+			stringr::str_replace_all("%Yj@",paste0(P$Y_jp,"\u5e74")) %>%
+			stringr::str_replace_all("%YJ@",paste0(P$Y_JP,"\u5e74")) %>%
+			stringr::str_replace_all("%Y@",paste0(P$Y,"\u5e74")) %>%
+			stringr::str_replace_all("%M@",paste0(P$M,"\u6708")) %>%
+			stringr::str_replace_all("%D@",paste0(P$D,"\u65e5")) %>%
+			stringr::str_replace_all("%Yj",P$Y_jp) %>%
+			stringr::str_replace_all("%YJ",P$Y_JP) %>%
+			stringr::str_replace_all("%Y2",P$Y2) %>%
+			stringr::str_replace_all("%Y",P$Y) %>%
+			stringr::str_replace_all("%Me",P$M_en) %>%
+			stringr::str_replace_all("%De",P$D_en) %>%
+			stringr::str_replace_all("%D2",P$D2) %>%
+			stringr::str_replace_all("%M2",P$M2) %>%
+			stringr::str_replace_all("%M",P$M) %>%
+			stringr::str_replace_all("%D",P$D) %>%
+			stringr::str_replace("^",P$beg) %>%
+			stringr::str_replace("$",P$end) %>%
+			return()
+
+		opt = opt[!is.na(opt)]
+
+		sprintf("# %s\npack = try_pattern(pack,\"%s\",c(%s),%s,%s)\n",
+				  pattern,
+				  pickup_pattern %>% stringi::stri_escape_unicode() %>% stringr::str_replace_all("\\\\","\\\\"),
+				  paste0(pickup_order,collapse =","),
+				  ifelse(length(opt)==0,"character(0)",paste0("c(\"",paste0(opt,collapse ="\",\""),"\")")),
+				  to_str
+		) %>% cat()
+	}
+
+	lines = script %>% stringr::str_split("\n")
+	lines = lines[[1]]
+	for(line in lines){
+		if(stringr::str_detect(line,"try_cand")){
+			try_cand_caller(stringr::str_extract(line,"try_cand\\(.+,\\s*\"([^\"]+)\"",1))
+		}else{
+			cat(paste0(line,"\n"))
+		}
+	}
+}
+
+#' formatting date string
+#' @description unify valid format of date
+#' @param datestr target character or sequence of character.
+#' @param Date.beg potentially begin date; used for validation and estimation.
+#' @param Date.end potentially end date; used for validation and estimation.
+#' @param strict return NA if read datestr is out of Date.beg-Date.end range
+#' @param use.range Allow range date format
+#' @param use.jpera Allow Japanese era case (e.g., R2.4.5 or 令和3年4月11日).
+#' @param use.exceldate Allow to check the value which is originally excel date but occationally transformed to normal value.
+#' @param exceldate.origin Origin of excel date. In default, it is 1900-01-01 if the file is originally created on Windows and 1904-01-01 on Mac.
+#' @return transformed date string like "2021.03.04-2023.05.31"
+#' @importFrom magrittr %>%
+#' @export
+datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TRUE, use.range=TRUE, use.jpera=TRUE, use.exceldate=FALSE,exceldate.origin = as.Date("1904-01-01")){
 	if(length(datestr)==0)return(datestr)
 	# basic character update
 	datestr = datestr %>%
@@ -632,24 +743,6 @@ datestr_format_full2 = function(datestr, Date.beg = NULL, Date.end = NULL, stric
 	Month.beg = as.integer(strftime(Date.beg,"%Y"))*12 + as.integer(strftime(Date.beg,"%m"))-1
 	Month.end = as.integer(strftime(Date.end,"%Y"))*12 + as.integer(strftime(Date.end,"%m"))-1
 
-	# これを正規表現に放り込むので、エスケープのエスケープが必須
-	P = list(
-		Y = "([0-2x][0-9x]{3})",
-		Y2 = "([0-9x]{2})",
-		to = "[~&]",
-		sep = "[\\\\.\\\\-\\\\s]",
-		space = "[\\\\s\\\\.,]*",
-		M = "([0-2x]?[0-9x])",
-		D = "([0-3x]?[0-9x])",
-		M2 = "([0-2x][0-9x])",
-		D2 = "([0-3x][0-9x])",
-		beg = "(?:^|[^a-z0-9])",
-		end = "(?:$|[^a-z0-9])",
-		Y_JP = sprintf("((?:%s)[0-6x]?[0-9x])",paste0(jpera_traits$jpname,collapse="|")),
-		Y_jp = sprintf("([%s][0-6x]?[0-9x])",stringr::str_to_lower(paste0(jpera_traits$name,collapse=""))),
-		M_en = "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)",
-		D_en = "([0-3x]?[0-9x](?:th|nd|rd)?)"
-	)
 	YMD_to_str = function(ymd, opt=NULL){
 		if(is.vector(ymd)){
 			if("-MD" %in% opt){
@@ -727,68 +820,8 @@ datestr_format_full2 = function(datestr, Date.beg = NULL, Date.end = NULL, stric
 		}
 		return(stringr::str_c(YMD_to_str(ymd[,1:(ncol(ymd)/2)],opt),YMD_to_str(ymd[,1:(ncol(ymd)/2)+(ncol(ymd)/2)],opt),sep = "-"))
 	}
-	try_cand_caller = function(pack, pattern){
-		opt = c(
-			dplyr::if_else(stringr::str_detect(pattern,"%Yj|%YJ"),"Yj",NA_character_),
-			dplyr::if_else(stringr::str_detect(pattern,"%Y2"),"Y2",NA_character_),
-			dplyr::if_else(stringr::str_detect(pattern,"%Me"),"Me",NA_character_),
-			dplyr::if_else(stringr::str_detect(pattern,"%De"),"De",NA_character_),
-			dplyr::case_when(
-				!stringr::str_detect(pattern,"%M|%D")~"-MD",
-				!stringr::str_detect(pattern,"%D")~"-D",
-				!stringr::str_detect(pattern,"%Y")~"-Y",
-				TRUE ~ NA_character_
-			)
-		)
 
-		pickup = stringr::str_extract_all(pattern,"%[YMD]",simplify = TRUE) %>% as.vector()
-		second_apper = duplicated(pickup)
-		if(any(second_apper)){
-			to_str = YMDYMD_to_str
-			pickup[second_apper] = stringr::str_c(pickup[second_apper],"2")
-			pickup_order = hmRLib::find_unique(c("%Y","%M","%D","%Y2","%M2","%D2"),pickup)
-			pickup_order[c(4,5,6)][is.na(pickup_order[c(4,5,6)])]=pickup_order[c(1,2,3)][is.na(pickup_order[c(4,5,6)])]
-			pickup_order = pickup_order[!is.na(pickup_order)]
-		}else{
-			to_str = YMD_to_str
-			pickup_order = hmRLib::find_unique(c("%Y","%M","%D"),pickup)
-			pickup_order = pickup_order[!is.na(pickup_order)]
-		}
-
-		pickup_pattern = pattern %>%
-			stringr::str_replace_all("\\-",P$to) %>%
-			stringr::str_replace_all("\\.",P$sep) %>%
-			stringr::str_replace_all("_",P$space) %>%
-			stringr::str_replace_all("%Yj@",paste0(P$Y_jp,"\u5e74")) %>%
-			stringr::str_replace_all("%YJ@",paste0(P$Y_JP,"\u5e74")) %>%
-			stringr::str_replace_all("%Y@",paste0(P$Y,"\u5e74")) %>%
-			stringr::str_replace_all("%M@",paste0(P$M,"\u6708")) %>%
-			stringr::str_replace_all("%D@",paste0(P$D,"\u65e5")) %>%
-			stringr::str_replace_all("%Yj",P$Y_jp) %>%
-			stringr::str_replace_all("%YJ",P$Y_JP) %>%
-			stringr::str_replace_all("%Y2",P$Y2) %>%
-			stringr::str_replace_all("%Y",P$Y) %>%
-			stringr::str_replace_all("%Me",P$M_en) %>%
-			stringr::str_replace_all("%De",P$D_en) %>%
-			stringr::str_replace_all("%D2",P$D2) %>%
-			stringr::str_replace_all("%M2",P$M2) %>%
-			stringr::str_replace_all("%M",P$M) %>%
-			stringr::str_replace_all("%D",P$D) %>%
-			stringr::str_replace("^",P$beg) %>%
-			stringr::str_replace("$",P$end) %>%
-			return()
-
-		opt = opt[!is.na(opt)]
-
-		sprintf("# %s\ntry_pattern(pack,\"%s\",c(%s),%s)\n",
-				  pattern,
-				  pickup_pattern %>% str_replace_all("\\\\","\\\\\\\\"),
-				  paste0(pickup_order,collapse =","),
-				  ifelse(length(opt)==0,"character(0)",paste0("c(\"",paste0(opt,collapse ="\",\""),"\")"))
-		) %>% cat()
-	}
-
-	try_pattern = function(pack,pickup_pattern,pickup_order,opt){
+	try_pattern = function(pack,pickup_pattern,pickup_order,opt,to_str){
 		cand = stringr::str_extract(pack$datestr,pickup_pattern,pickup_order) %>% to_str(opt)
 		pos = !is.na(cand)&pack$ans_level>=pack$level
 		pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
@@ -806,190 +839,295 @@ datestr_format_full2 = function(datestr, Date.beg = NULL, Date.end = NULL, stric
 	#range detect mode
 	if(use.range){
 		pack$level = 100 #YYYY.M.D-YYYY.M.D
-		pack = try_cand(pack,"%Y.%M.%D-%Y.%M.%D")
-		pack = try_cand(pack,"%Y@%M@%D@-%Y@%M@%D@")
-		pack = try_cand(pack,"%Y_%Me_%De-%Y_%Me_%De")
-		pack = try_cand(pack,"%De_%Me_%Y-%De_%Me_%Y")
-		pack = try_cand(pack,"%Me_%De_%Y-%Me_%De_%Y")
+		# %Y.%M.%D-%Y.%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
+		# %Y@%M@%D@-%Y@%M@%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
+		# %Y_%Me_%De-%Y_%Me_%De
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Me","De"),YMDYMD_to_str)
+		# %De_%Me_%Y-%De_%Me_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1,6,5,4),c("Me","De"),YMDYMD_to_str)
+		# %Me_%De_%Y-%Me_%De_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,2,6,4,5),c("Me","De"),YMDYMD_to_str)
 		if(use.jpera){
-			pack = try_cand(pack,"%Yj.%M.%D-%Yj.%M.%D")
-			pack = try_cand(pack,"%Yj@%M@%D@-%Yj@%M@%D@")
-			pack = try_cand(pack,"%YJ@%M@%D@-%YJ@%M@%D@")
+			# %Yj.%M.%D-%Yj.%M.%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
+			# %Yj@%M@%D@-%Yj@%M@%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
+			# %YJ@%M@%D@-%YJ@%M@%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
 		}
 
 		pack$level = 110
-		pack = try_cand(pack,"%D.%M.%Y-%D.%M.%Y")
+		# %D.%M.%Y-%D.%M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1,6,5,4),character(0),YMDYMD_to_str)
 
 		pack$level = 200
-		pack = try_cand(pack,"%Y.%M.%D-%M.%D")
-		pack = try_cand(pack,"%Y@%M@%D@-%M@%D@")
-		pack = try_cand(pack,"%Y_%Me_%De-%Me_%De")
-		pack = try_cand(pack,"%De_%Me-%De_%Me_%Y")
-		pack = try_cand(pack,"%Me_%De-%Me_%De_%Y")
+		# %Y.%M.%D-%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
+		# %Y@%M@%D@-%M@%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
+		# %Y_%Me_%De-%Me_%De
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Me","De"),YMDYMD_to_str)
+		# %De_%Me-%De_%Me_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,2,1,5,4,3),c("Me","De"),YMDYMD_to_str)
+		# %Me_%De-%Me_%De_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,1,2,5,3,4),c("Me","De"),YMDYMD_to_str)
 		if(use.jpera){
-			pack = try_cand(pack,"%Yj.%M.%D-%M.%D")
-			pack = try_cand(pack,"%Yj@%M@%D@-%M@%D@")
-			pack = try_cand(pack,"%YJ@%M@%D@-%M@%D@")
+			# %Yj.%M.%D-%M.%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
+			# %Yj@%M@%D@-%M@%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
+			# %YJ@%M@%D@-%M@%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
 		}
 
 		pack$level = 210
-		pack = try_cand(pack,"%D.%M-%D.%M.%Y")
+		# %D.%M-%D.%M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,2,1,5,4,3),character(0),YMDYMD_to_str)
 
 		pack$level = 300 #yyyy.mm.dd-dd
-		pack = try_cand(pack,"%Y.%M.%D-%D")
-		pack = try_cand(pack,"%Y@%M@%D@?-%D@")
-		pack = try_cand(pack,"%Y_%Me_%De-%De")
-		pack = try_cand(pack,"%De-%De_%Me_%Y")
-		pack = try_cand(pack,"%Me_%De-%De_%Y")
+		# %Y.%M.%D-%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
+		# %Y@%M@%D@?-%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
+		# %Y_%Me_%De-%De
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Me","De"),YMDYMD_to_str)
+		# %De-%De_%Me_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,3,1,4,3,2),c("Me","De"),YMDYMD_to_str)
+		# %Me_%De-%De_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,1,2,4,1,3),c("Me","De"),YMDYMD_to_str)
 		if(use.jpera){
-			pack = try_cand(pack, "%Yj.%M.%D-%D")
-			pack = try_cand(pack, "%Yj@%M@%D@?-%D@")
-			pack = try_cand(pack, "%YJ@%M@%D@?-%D@")
+			# %Yj.%M.%D-%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
+			# %Yj@%M@%D@?-%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
+			# %YJ@%M@%D@?-%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
 		}
 
 		pack$level = 310 #dd-dd.mm.yyyy
-		pack = try_cand(pack, "%D-%D.%M.%Y")
+		# %D-%D.%M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,3,1,4,3,2),character(0),YMDYMD_to_str)
 
 		pack$level = 400 #yyyymmdd-yyyymmdd
-		pack = try_cand(pack, "%Y%M%D2-%Y%M%D2")
+		# %Y%M%D2-%Y%M%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
 
 		pack$level = 410 #yyyymmdd-mmdd
-		pack = try_cand(pack,"%Y%M%D2-%M%D2")
+		# %Y%M%D2-%M%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
 
 		pack$level = 420 #yyyymmdd-dd
-		pack = try_cand(pack,"%Y%M%D2-%D")
+		# %Y%M%D2-%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
 	}
 
 	# YYYY.MM.DD
 	pack$level = 1100
-	pack = try_cand(pack, "%Y.%M.%D")
-	pack = try_cand(pack, "%Y@%M@%D@")
-	pack = try_cand(pack, "%Y_%Me_%De")
-	pack = try_cand(pack, "%De_%Me_%Y")
-	pack = try_cand(pack, "%Me_%De_%Y")
+	# %Y.%M.%D
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
+	# %Y@%M@%D@
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
+	# %Y_%Me_%De
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3),c("Me","De"),YMD_to_str)
+	# %De_%Me_%Y
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1),c("Me","De"),YMD_to_str)
+	# %Me_%De_%Y
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,2),c("Me","De"),YMD_to_str)
 	if(use.jpera){
-		pack = try_cand(pack,"%Yj.%M.%D")
-		pack = try_cand(pack,"%Yj@%M@%D@")
-		pack = try_cand(pack,"%YJ@%M@%D@")
+		# %Yj.%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
+		# %Yj@%M@%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
+		# %YJ@%M@%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
 	}
 
 
 	pack$level = 1110 #dd.mm.yyyy
-	pack = try_cand(pack,"%D.%M.%Y")
+	# %D.%M.%Y
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1),character(0),YMD_to_str)
 
 	pack$level = 1400 #yyyymmdd
-	pack = try_cand(pack, "%Y%M%D2")
+	# %Y%M%D2
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
 
 	pack$level = 2000 #yy.mm.dd-yy.mm.dd
-	pack = try_cand(pack, "%Y2.%M.%D-%Y2.%M.%D")
+	# %Y2.%M.%D-%Y2.%M.%D
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Y2"),YMDYMD_to_str)
 
 	pack$level = 2010 #yy.mm.dd-mm.dd
-	pack = try_cand(pack,"%Y2.%M.%D-%M.%D")
+	# %Y2.%M.%D-%M.%D
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Y2"),YMDYMD_to_str)
 
 	pack$level = 2020 #yy.mm.dd-dd
-	pack = try_cand(pack,"%Y2.%M.%D-%D")
+	# %Y2.%M.%D-%D
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Y2"),YMDYMD_to_str)
 
 	pack$level = 2100 #yy.mm.dd
-	pack = try_cand(pack,"%Y2.%M.%D")
+	# %Y2.%M.%D
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Y2"),YMD_to_str)
 
 	if(use.range){
 		pack$level = 3000 #yyyy.mm-yyyy.mm
-		pack = try_cand(pack, "%Y.%M-%Y.%M")
-		pack = try_cand(pack, "%Y@%M@-%Y@%M@")
-		pack = try_cand(pack, "%Y_%Me-%Y_%Me")
-		pack = try_cand(pack, "%Me_%Y-%Me_%Y")
+		# %Y.%M-%Y.%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
+		# %Y@%M@-%Y@%M@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
+		# %Y_%Me-%Y_%Me
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2,3,4),c("Me","-D"),YMDYMD_to_str)
+		# %Me_%Y-%Me_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1,4,3),c("Me","-D"),YMDYMD_to_str)
 		if(use.jpera){
-			pack = try_cand(pack,"%Yj.%M-%Yj.%M")
-			pack = try_cand(pack,"%Yj@%M@-%Yj@%M@")
-			pack = try_cand(pack,"%YJ@%M@-%YJ@%M@")
+			# %Yj.%M-%Yj.%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
+			# %Yj@%M@-%Yj@%M@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
+			# %YJ@%M@-%YJ@%M@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
 		}
 		pack$level = 3010
-		pack = try_cand(pack,"%M.%Y-%M.%Y")
+		# %M.%Y-%M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1,4,3),c("-D"),YMDYMD_to_str)
 		pack$level = 3020 #yyyy.mm-yyyy.mm
-		pack = try_cand(pack, "%Y.%M-%M")
-		pack = try_cand(pack, "%Y@%M@-%M@")
-		pack = try_cand(pack, "%Y_%Me-%Me")
-		pack = try_cand(pack, "%Me_%Me_%Y")
+		# %Y.%M-%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
+		# %Y@%M@-%M@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
+		# %Y_%Me-%Me
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2,1,3),c("Me","-D"),YMDYMD_to_str)
+		# %Me_%Me_%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,3,2),c("Me","-D"),YMDYMD_to_str)
 		if(use.jpera){
-			pack = try_cand(pack,"%Yj.%M-%M")
-			pack = try_cand(pack,"%Yj@%M@-%M@")
-			pack = try_cand(pack,"%YJ@%M@-%M@")
+			# %Yj.%M-%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
+			# %Yj@%M@-%M@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
+			# %YJ@%M@-%M@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
 		}
 		pack$level = 3030
-		pack = try_cand(pack,"%M-%M.%Y")
+		# %M-%M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,3,2),c("-D"),YMDYMD_to_str)
 	}
 
 	pack$level = 3100 #yyyy.mm
-	pack = try_cand(pack, "%Y.%M")
-	pack = try_cand(pack, "%Y@%M@")
-	pack = try_cand(pack, "%Y_%Me")
-	pack = try_cand(pack, "%Me_%Y")
+	# %Y.%M
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
+	# %Y@%M@
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
+	# %Y_%Me
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2),c("Me","-D"),YMD_to_str)
+	# %Me_%Y
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1),c("Me","-D"),YMD_to_str)
 	if(use.jpera){
-		pack = try_cand(pack,"%Yj.%M")
-		pack = try_cand(pack,"%Yj@%M@")
-		pack = try_cand(pack,"%YJ@%M@")
+		# %Yj.%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
+		# %Yj@%M@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
+		# %YJ@%M@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
 	}
 	pack$level = 3110
-	pack = try_cand(pack,"%M.%Y")
+	# %M.%Y
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1),c("-D"),YMD_to_str)
 
 	if(use.range){
 		pack$level = 4000 #yymmdd-yymmdd or yyyymm-yyyymm
-		pack = try_cand(pack, "%Y2%M2%D2-%Y2%M2%D2")
-		pack = try_cand(pack,"%Y%M2-%Y%M2")
+		# %Y2%M2%D2-%Y2%M2%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Y2"),YMDYMD_to_str)
+		# %Y%M2-%Y%M2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])[~&]([0-2x][0-9x]{3})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
 
 		pack$level = 4010 #yymmdd-mmdd or yyyymm-yyyymm
-		pack = try_cand(pack, "%Y2%M2%D2-%M2%D2")
+		# %Y2%M2%D2-%M2%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Y2"),YMDYMD_to_str)
 
 		pack$level = 4020 #yymmdd-dd or yyyymm-mm
-		pack = try_cand(pack, "%Y2%M2%D2-%D2")
-		pack = try_cand(pack,"%Y%M2-%M2")
+		# %Y2%M2%D2-%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Y2"),YMDYMD_to_str)
+		# %Y%M2-%M2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])[~&]([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
 	}
 	pack$level = 4100 #yymmdd
-	pack = try_cand(pack, "%Y2%M2%D2")
-	pack = try_cand(pack, "%Y%M2")
+	# %Y2%M2%D2
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Y2"),YMD_to_str)
+	# %Y%M2
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
 
 	if(use.range){
 		pack$level = 5000 #yyyy.mm-yyyy.mm
-		pack = try_cand(pack, "%M@%D@-%M@%D@")
-		pack = try_cand(pack, "%Me_%De-%Me_%De")
-		pack = try_cand(pack, "%De_%Me-%De_%Me")
+		# %M@%D@-%M@%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
+		# %Me_%De-%Me_%De
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,4),c("Me","De","-Y"),YMDYMD_to_str)
+		# %De_%Me-%De_%Me
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(2,1,4,3),c("Me","De","-Y"),YMDYMD_to_str)
 
 		pack$level = 5020 #yyyy.mm-yyyy.mm
-		pack = try_cand(pack, "%M@%D@?-%D@")
-		pack = try_cand(pack, "%Me_%De-%De")
-		pack = try_cand(pack, "%De-%De_%Me")
+		# %M@%D@?-%D@
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
+		# %Me_%De-%De
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,1,3),c("Me","De","-Y"),YMDYMD_to_str)
+		# %De-%De_%Me
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(3,1,3,2),c("Me","De","-Y"),YMDYMD_to_str)
 	}
 
 	pack$level = 5100 #yyyy.mm
-	pack = try_cand(pack, "%M@%D@")
-	pack = try_cand(pack, "%De_%Me")
-	pack = try_cand(pack, "%Me_%De")
+	# %M@%D@
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
+	# %De_%Me
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(2,1),c("Me","De","-Y"),YMD_to_str)
+	# %Me_%De
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2),c("Me","De","-Y"),YMD_to_str)
 
 	if(use.range){
 		pack$level = 5200 #yy.mm-yy.mm or mm.dd-mm.dd
-		pack = try_cand(pack, "%Y2.%M-%Y2.%M")
-		pack = try_cand(pack, "%M.%D-%M.%D")
-		pack = try_cand(pack, "%Y2.%M-%M")
-		pack = try_cand(pack, "%M.%D-%D")
+		# %Y2.%M-%Y2.%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Y2","-D"),YMDYMD_to_str)
+		# %M.%D-%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
+		# %Y2.%M-%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Y2","-D"),YMDYMD_to_str)
+		# %M.%D-%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
 	}
 	pack$level = 5300 #yy.mm or mm.dd
-	pack = try_cand(pack, "%Y2.%M")
-	pack = try_cand(pack, "%M.%D")
+	# %Y2.%M
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("Y2","-D"),YMD_to_str)
+	# %M.%D
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
 
 	if(use.range){
 		pack$level = 6000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
-		pack = try_cand(pack, "%Y-%Y")
-		pack = try_cand(pack,"%Y2%M2-%Y2%M2")
-		pack = try_cand(pack,"%M%D2-%M%D2")
+		# %Y-%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[~&]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(1,2),c("-MD"),YMDYMD_to_str)
+		# %M%D2-%M%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
 
 		pack$level = 6020 #yymmdd-dd or yyyymm-mm
-		pack = try_cand(pack, "%Y2%M2-%M2")
-		pack = try_cand(pack,"%M%D2-%D2")
+		# %M%D2-%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
 	}
 	pack$level = 6100 #yymmdd
-	pack = try_cand(pack, "%Y")
-	pack = try_cand(pack, "%Y2%M2")
-	pack = try_cand(pack, "%M%D2")
+	# %Y
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(1),c("-MD"),YMD_to_str)
+	# %M%D2
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
+
+	if(use.range){
+		pack$level = 7000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
+		# %Y2%M2-%Y2%M2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])[~&]([0-9x]{2})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Y2","-D"),YMDYMD_to_str)
+
+		pack$level = 7020 #yymmdd-dd or yyyymm-mm
+		# %Y2%M2-%M2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])[~&]([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Y2","-D"),YMDYMD_to_str)
+	}
+	pack$level = 7100 #yymmdd
+	# %Y2%M2
+	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("Y2","-D"),YMD_to_str)
 
 	#try excel
 	pack$level = 10000 #excel date value

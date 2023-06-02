@@ -1,12 +1,12 @@
 Package: hmRLib
 Type: Package
 Title: Helper library for numerical analysis with R
-Version: 0.4.3
+Version: 0.4.4
 Author: Koichi Ito
 Maintainer: Koichi Ito <koichi.ito.cpp@outlook.com>
 Description: This is a helper library for numeric analysis with using R.
     This library includes additional color set, plot functions, numeric analysis functions and helper functions for using rscript. 
 License: MIT + file LICENSE
-Imports: stringr, devtools, purrr, rex, Rcpp, magrittr, dplyr, tidyr, tibble, rlang
+Imports: stringr, stringi, devtools, purrr, rex, Rcpp, magrittr, dplyr, tidyr, tibble, rlang
 Encoding: UTF-8
 RoxygenNote: 7.2.3
