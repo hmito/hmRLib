@@ -1184,8 +1184,11 @@ datestr_to_ymd = function(datestr, Date.beg = NULL, Date.end = NULL, strict = TR
 		end[endna,]=beg[endna,]
 		ans = list(beg=beg,end=end)
 	}else{
-		ans = rep(NA_character_,length = length(datestr))
-	}
+		ans = data.frame(
+			y=rep(NA_integer_,length=length(table)),
+			m=rep(NA_integer_,length=length(table)),
+			d=rep(NA_integer_,length=length(table))
+		)	}
 	return(ans)
 }
 
