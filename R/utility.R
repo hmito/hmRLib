@@ -42,7 +42,11 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 			if(use_pid){
 				head = sprintf("@%05d %s",Sys.getpid(),head)
 			}
-			msg = paste0(paste0(head," ",sprintf(str,...)),collapse="\n")
+			if(length(list(...))==0){
+				msg = paste0(paste0(head," ",str),collapse="\n")
+			}else{
+				msg = paste0(paste0(head," ",sprintf(str,...)),collapse="\n")
+			}
 			if(!is.null(outpath)){
 				out.file <- file(outpath, open = "a")
 				writeLines(msg, out.file)
@@ -61,7 +65,11 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 			if(use_pid){
 				head = sprintf("@%05d %s",Sys.getpid(),head)
 			}
-			msg = paste0(paste0(head,"<W> ",sprintf(str,...)),collapse="\n")
+			if(length(list(...))==0){
+				msg = paste0(paste0(head,"<W> ",str),collapse="\n")
+			}else{
+				msg = paste0(paste0(head,"<W> ",sprintf(str,...)),collapse="\n")
+			}
 			if(!is.null(outpath)){
 				out.file <- file(outpath, open = "a")
 				writeLines(msg, out.file)
@@ -73,7 +81,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				close(out.file)
 			}
 			if(!silent){
-				base::warning(msg,call.=FALSE)
+				base::warning(msg,call.=FALSE,immediate. = TRUE)
 			}
 		},
 		error = function(str,...){
@@ -85,7 +93,11 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 			if(use_pid){
 				head = sprintf("@%05d %s",Sys.getpid(),head)
 			}
-			msg = paste0(paste0(head,"<E> ",sprintf(str,...)),collapse="\n")
+			if(length(list(...))==0){
+				msg = paste0(paste0(head,"<E> ",str),collapse="\n")
+			}else{
+				msg = paste0(paste0(head,"<E> ",sprintf(str,...)),collapse="\n")
+			}
 			if(!is.null(outpath)){
 				out.file <- file(outpath, open = "a")
 				writeLines(msg, out.file)

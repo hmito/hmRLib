@@ -1,7 +1,7 @@
 Package: hmRLib
 Type: Package
 Title: Helper library for numerical analysis with R
-Version: 0.4.4
+Version: 0.4.5
 Author: Koichi Ito
 Maintainer: Koichi Ito <koichi.ito.cpp@outlook.com>
 Description: This is a helper library for numeric analysis with using R.
