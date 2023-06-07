@@ -137,6 +137,28 @@ file.backup = function(filepath, backup = "bak", backup.dir = NULL,timeformat = 
 	return(filepath)
 }
 
+#' generate file output
+#' @description Generate file output
+#' @param filepath file path (character)
+#' @param encoding encoding
+#' @param raw raw option
+#' @return fout function
+#' @export
+file.fout = function(filepath, encoding = getOption("encoding"), raw=FALSE){
+	outfile = file(filepath, open = "w")
+	function(str, ..., close = FALSE){
+		if(close){
+			close(outfile)
+		}else{
+			if(length(list(...))==0){
+				writeLines(str,outfile)
+			}else{
+				writeLines(sprintf(str,...),outfile)
+			}
+		}
+	}
+}
+
 #' Cache expression result
 #' @description expression result is saved as rds with time stamp. If cached file already exist, it try to use it.
 #' @param expr expression for caching
@@ -151,7 +173,8 @@ cache = function(expr,path,expire=NULL,required_ver=NULL){
 	if(length(path)>0){
 		if(file.exists(path) && (length(expire)==0 || expire>=0)){
 			rds = readRDS(path)
-			if((length(required_ver)==0 || (length(rds$ver)!=0 && rds$ver >= required_ver)) && (length(expire)==0 || rds$time + expire > now)){
+			if((length(required_ver)==0 || (length(rds$ver)!=0 && rds$ver >= required_ver)) &&
+				(length(expire)==0 || rds$time + expire > now)){
 				return(rds$dat)
 			}
 		}

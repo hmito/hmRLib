@@ -101,12 +101,38 @@ str_to_han = function(x){
 #' @param string character for checking similarity
 #' @param target character for compared target
 #' @param similarity threshold similarity
+#' @param only_sub count only substitute
 #' @return logical: TRUE if string is enough similar with target.
 #' @importFrom utils adist
 #' @export
-str_similar = function(string,target,similarity=3){
-	apply(adist(string,target)<=similarity,1,any)
+str_similar = function(string,target,similarity=3, only_sub = FALSE){
+	if(only_sub){
+		apply(attributes(adist(string,target,counts=TRUE))$count[,,"sub"]<=similarity,1,any)
+	}else{
+		apply(adist(string,target)<=similarity,1,any)
+	}
 }
+
+#' Check similarity pair of given string with themselves.
+#' @description Check similarity pair of given string with themselves.
+#' @param string character for checking similarity
+#' @param similarity threshold similarity
+#' @param only_sub count only substitute
+#' @return logical: TRUE if string is enough similar with target.
+#' @importFrom utils adist
+#' @export
+str_similar_pair = function(string,similarity=3, only_sub = FALSE){
+	if(only_sub){
+		dist = attributes(adist(string,string,counts=TRUE))$count[,,"sub"]<=similarity & !diag(TRUE,length(string))
+	}else{
+		dist = adist(string,string)<=similarity & !diag(TRUE,length(string))
+	}
+	row = matrix(1:length(string),length(string),length(string))
+	pair = cbind(t(row)[dist],row[dist])
+	pair = pair[pair[,1]<pair[,2],]
+	return(pair)
+}
+
 #' Wherher the given string appear first time in the given string vector
 #' @description str can be uniqued by using string[str_first_appear(string)].
 #' @param string target character vector.
@@ -121,6 +147,7 @@ str_first_appear = function(string,similarity=3){
 		apply(apply((adist(string,string)<similarity),2,cumsum)>0,2,function(x){min((1:length(x))[x])})==1:length(string)
 	)
 }
+
 #' Generate random character sequences
 #' @description return n strings with length len.
 #' @param n number of str
@@ -148,3 +175,96 @@ rand_char = function(n,len,lower_case=TRUE,upper_case=TRUE,number=TRUE){
 	}
 	return(ans)
 }
+
+#' Escape all markdown character.
+#' @description Escape all markdown character.
+#' @param str character vector
+#' @return Returns a character vector.
+#' @export
+escape_md = function(str){
+	str |>
+		stringr::str_replace_all("\\[",'\\\\[') |>
+		stringr::str_replace_all("\\]",'\\\\]') |>
+		stringr::str_replace_all("\\(",'\\\\(') |>
+		stringr::str_replace_all("\\)",'\\\\)') |>
+		stringr::str_replace_all("\\{",'\\\\{') |>
+		stringr::str_replace_all("\\}",'\\\\}') |>
+		stringr::str_replace_all("\\*",'\\\\*') |>
+		stringr::str_replace_all("\\+",'\\\\+') |>
+		stringr::str_replace_all("\\-",'\\\\-') |>
+		stringr::str_replace_all("\\.",'\\\\.') |>
+		stringr::str_replace_all("`",'\\\\`') |>
+		stringr::str_replace_all("_",'\\\\_') |>
+		stringr::str_replace_all("#",'\\\\#') |>
+		stringr::str_replace_all("!",'\\\\!')
+}
+
+#' Unescape all markdown character.
+#' @description Unescape all markdown character.
+#' @param str character vector
+#' @return Returns a character vector.
+#' @export
+unescape_md = function(str){
+	str |>
+		stringr::str_replace_all("\\\\\\[",'[') |>
+		stringr::str_replace_all("\\\\\\]",']') |>
+		stringr::str_replace_all("\\\\\\(",'(') |>
+		stringr::str_replace_all("\\\\\\)",')') |>
+		stringr::str_replace_all("\\\\\\{",'{') |>
+		stringr::str_replace_all("\\\\\\}",'}') |>
+		stringr::str_replace_all("\\\\\\*",'*') |>
+		stringr::str_replace_all("\\\\\\+",'+') |>
+		stringr::str_replace_all("\\\\\\-",'-') |>
+		stringr::str_replace_all("\\\\\\.",'.') |>
+		stringr::str_replace_all("\\\\`",'`') |>
+		stringr::str_replace_all("\\\\_",'_') |>
+		stringr::str_replace_all("\\\\#",'#') |>
+		stringr::str_replace_all("\\\\!",'!')
+}
+
+#' Escape all regex character.
+#' @description Escape all regex character.
+#' @param str character vector
+#' @return Returns a character vector.
+#' @export
+escape_regex = function(str){
+	str |>
+		stringr::str_replace_all("\\[",'\\\\[') |>
+		stringr::str_replace_all("\\]",'\\\\]') |>
+		stringr::str_replace_all("\\(",'\\\\(') |>
+		stringr::str_replace_all("\\)",'\\\\)') |>
+		stringr::str_replace_all("\\{",'\\\\{') |>
+		stringr::str_replace_all("\\}",'\\\\}') |>
+		stringr::str_replace_all("\\*",'\\\\*') |>
+		stringr::str_replace_all("\\+",'\\\\+') |>
+		stringr::str_replace_all("\\-",'\\\\-') |>
+		stringr::str_replace_all("\\.",'\\\\.') |>
+		stringr::str_replace_all("\\^",'\\\\^') |>
+		stringr::str_replace_all("\\$",'\\\\$') |>
+		stringr::str_replace_all("\\?",'\\\\?') |>
+		stringr::str_replace_all("\\|",'\\\\|')
+}
+
+#' Unescape all regex character.
+#' @description Unescape all regex character.
+#' @param str character vector
+#' @return Returns a character vector.
+#' @export
+unescape_regex = function(str){
+	str |>
+		stringr::str_replace_all("\\\\\\[",'[') |>
+		stringr::str_replace_all("\\\\\\]",']') |>
+		stringr::str_replace_all("\\\\\\(",'(') |>
+		stringr::str_replace_all("\\\\\\)",')') |>
+		stringr::str_replace_all("\\\\\\{",'{') |>
+		stringr::str_replace_all("\\\\\\}",'}') |>
+		stringr::str_replace_all("\\\\\\*",'*') |>
+		stringr::str_replace_all("\\\\\\+",'+') |>
+		stringr::str_replace_all("\\\\\\-",'-') |>
+		stringr::str_replace_all("\\\\\\.",'.') |>
+		stringr::str_replace_all("\\\\\\^",'^') |>
+		stringr::str_replace_all("\\\\\\$",'$') |>
+		stringr::str_replace_all("\\\\\\?",'?') |>
+		stringr::str_replace_all("\\\\\\|",'|')
+}
+

@@ -114,4 +114,7 @@ start_ownself = function(ownpath, ...){
 	return(FALSE)
 }
 
-
+#' Check interactive mode.
+#' @return TRUE if the rscript is interactive mode.
+#' @export
+is_interactive = function(){any(commandArgs(FALSE) %in% "--interactive")}
