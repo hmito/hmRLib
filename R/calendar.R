@@ -822,327 +822,461 @@ datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict
 	}
 
 	try_pattern = function(pack,pickup_pattern,pickup_order,opt,to_str){
-		cand = stringr::str_extract(pack$datestr,pickup_pattern,pickup_order) %>% to_str(opt)
-		pos = !is.na(cand)&pack$ans_level>=pack$level
-		pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
-		pack$ans_level[pos] = pack$level
+		if(stringr::str_detect(pack$datestr,pickup_pattern)){
+			cand = stringr::str_extract(pack$datestr,pickup_pattern,pickup_order) %>% to_str(opt)
+			pos = !is.na(cand)&pack$ans_level>=pack$level
+			pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
+			pack$ans_level[pos] = pack$level
+		}
 		return(pack)
 	}
 
-	pack = list(
-		datestr = datestr,
-		level = Inf,
-		ans = rep(NA_character_,length=length(datestr)),
-		ans_level = rep(Inf,length=length(datestr))
-	)
+	datestr_format_full_each = function(datestr, Date.beg, Date.end, strict, use.range, use.jpera, use.exceldate,exceldate.origin){
+		pack = list(
+			datestr = datestr,
+			level = Inf,
+			ans = rep(NA_character_,length=length(datestr)),
+			ans_level = rep(Inf,length=length(datestr))
+		)
 
-	#range detect mode
-	if(use.range){
-		pack$level = 100 #YYYY.M.D-YYYY.M.D
-		# %Y.%M.%D-%Y.%M.%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
-		# %Y@%M@%D@-%Y@%M@%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
-		# %Y_%Me_%De-%Y_%Me_%De
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Me","De"),YMDYMD_to_str)
-		# %De_%Me_%Y-%De_%Me_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1,6,5,4),c("Me","De"),YMDYMD_to_str)
-		# %Me_%De_%Y-%Me_%De_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,2,6,4,5),c("Me","De"),YMDYMD_to_str)
-		if(use.jpera){
-			# %Yj.%M.%D-%Yj.%M.%D
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
-			# %Yj@%M@%D@-%Yj@%M@%D@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
-			# %YJ@%M@%D@-%YJ@%M@%D@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
+		use.jpyear = stringr::str_detect(pack$datestr,"[\u5e74\u6708\u65e5]")
+		use.enmonth = stringr::str_detect(pack$datestr,"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)")
+		use.range = use.range && stringr::str_detect(pack$datestr,"[~&]")
+
+		#range detect mode
+		if(use.range){
+			pack$level = 100 #YYYY.M.D-YYYY.M.D
+			# %Y.%M.%D-%Y.%M.%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Y@%M@%D@-%Y@%M@%D@
+			if(use.jpyear){
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
+			}
+			if(pack$level==pack$ans_level)return(pack$ans)
+			if(use.enmonth){
+				# %Y_%Me_%De-%Y_%Me_%De
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %De_%Me_%Y-%De_%Me_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1,6,5,4),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %Me_%De_%Y-%Me_%De_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,2,6,4,5),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.jpera){
+				# %Yj.%M.%D-%Yj.%M.%D
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				if(use.jpyear){
+					# %Yj@%M@%D@-%Yj@%M@%D@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+					# %YJ@%M@%D@-%YJ@%M@%D@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Yj"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+				}
+			}
+
+			pack$level = 110
+			# %D.%M.%Y-%D.%M.%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1,6,5,4),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 200
+			# %Y.%M.%D-%M.%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Y@%M@%D@-%M@%D@
+			if(use.jpyear){
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.enmonth){
+				# %Y_%Me_%De-%Me_%De
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %De_%Me-%De_%Me_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,2,1,5,4,3),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %Me_%De-%Me_%De_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,1,2,5,3,4),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.jpera){
+				# %Yj.%M.%D-%M.%D
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				if(use.jpyear){
+					# %Yj@%M@%D@-%M@%D@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+					# %YJ@%M@%D@-%M@%D@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+				}
+			}
+			pack$level = 210
+			# %D.%M-%D.%M.%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,2,1,5,4,3),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 300 #yyyy.mm.dd-dd
+			# %Y.%M.%D-%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Y@%M@%D@?-%D@
+			if(use.jpyear){
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.enmonth){
+				# %Y_%Me_%De-%De
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %De-%De_%Me_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,3,1,4,3,2),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %Me_%De-%De_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,1,2,4,1,3),c("Me","De"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.jpera){
+				# %Yj.%M.%D-%D
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				if(use.jpyear){
+					# %Yj@%M@%D@?-%D@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+					# %YJ@%M@%D@?-%D@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+				}
+			}
+
+			pack$level = 310 #dd-dd.mm.yyyy
+			# %D-%D.%M.%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,3,1,4,3,2),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 400 #yyyymmdd-yyyymmdd
+			# %Y%M%D2-%Y%M%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 410 #yyyymmdd-mmdd
+			# %Y%M%D2-%M%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 420 #yyyymmdd-dd
+			# %Y%M%D2-%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
 		}
 
-		pack$level = 110
-		# %D.%M.%Y-%D.%M.%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1,6,5,4),character(0),YMDYMD_to_str)
-
-		pack$level = 200
-		# %Y.%M.%D-%M.%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
-		# %Y@%M@%D@-%M@%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
-		# %Y_%Me_%De-%Me_%De
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Me","De"),YMDYMD_to_str)
-		# %De_%Me-%De_%Me_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,2,1,5,4,3),c("Me","De"),YMDYMD_to_str)
-		# %Me_%De-%Me_%De_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,1,2,5,3,4),c("Me","De"),YMDYMD_to_str)
+		# YYYY.MM.DD
+		pack$level = 1100
+		# %Y.%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+		# %Y@%M@%D@
+		if(use.jpyear){
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+		if(use.enmonth){
+			# %Y_%Me_%De
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3),c("Me","De"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %De_%Me_%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1),c("Me","De"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Me_%De_%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,2),c("Me","De"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
 		if(use.jpera){
-			# %Yj.%M.%D-%M.%D
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
-			# %Yj@%M@%D@-%M@%D@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
-			# %YJ@%M@%D@-%M@%D@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Yj"),YMDYMD_to_str)
+			# %Yj.%M.%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			if(use.jpyear){
+				# %Yj@%M@%D@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %YJ@%M@%D@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
 		}
 
-		pack$level = 210
-		# %D.%M-%D.%M.%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(5,2,1,5,4,3),character(0),YMDYMD_to_str)
+		pack$level = 1110 #dd.mm.yyyy
+		# %D.%M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1),character(0),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
 
-		pack$level = 300 #yyyy.mm.dd-dd
-		# %Y.%M.%D-%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
-		# %Y@%M@%D@?-%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
-		# %Y_%Me_%De-%De
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Me","De"),YMDYMD_to_str)
-		# %De-%De_%Me_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,3,1,4,3,2),c("Me","De"),YMDYMD_to_str)
-		# %Me_%De-%De_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,1,2,4,1,3),c("Me","De"),YMDYMD_to_str)
-		if(use.jpera){
-			# %Yj.%M.%D-%D
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
-			# %Yj@%M@%D@?-%D@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
-			# %YJ@%M@%D@?-%D@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Yj"),YMDYMD_to_str)
+		pack$level = 1400 #yyyymmdd
+		# %Y%M%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		pack$level = 2000 #yy.mm.dd-yy.mm.dd
+		# %Y2.%M.%D-%Y2.%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Y2"),YMDYMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		pack$level = 2010 #yy.mm.dd-mm.dd
+		# %Y2.%M.%D-%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Y2"),YMDYMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		pack$level = 2020 #yy.mm.dd-dd
+		# %Y2.%M.%D-%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Y2"),YMDYMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		pack$level = 2100 #yy.mm.dd
+		# %Y2.%M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Y2"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		if(use.range){
+			pack$level = 3000 #yyyy.mm-yyyy.mm
+			# %Y.%M-%Y.%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Y@%M@-%Y@%M@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Y_%Me-%Y_%Me
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2,3,4),c("Me","-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Me_%Y-%Me_%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1,4,3),c("Me","-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			if(use.jpera){
+				# %Yj.%M-%Yj.%M
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %Yj@%M@-%Yj@%M@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %YJ@%M@-%YJ@%M@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			pack$level = 3010
+			# %M.%Y-%M.%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1,4,3),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			pack$level = 3020 #yyyy.mm-yyyy.mm
+			# %Y.%M-%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Y@%M@-%M@
+			if(use.jpyear){
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.enmonth){
+				# %Y_%Me-%Me
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2,1,3),c("Me","-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %Me_%Me_%Y
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,3,2),c("Me","-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+			if(use.jpera){
+				# %Yj.%M-%M
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				if(use.jpyear){
+					# %Yj@%M@-%M@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+					# %YJ@%M@-%M@
+					pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
+					if(pack$level==pack$ans_level)return(pack$ans)
+				}
+			}
+			pack$level = 3030
+			# %M-%M.%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,3,2),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
 		}
 
-		pack$level = 310 #dd-dd.mm.yyyy
-		# %D-%D.%M.%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(4,3,1,4,3,2),character(0),YMDYMD_to_str)
-
-		pack$level = 400 #yyyymmdd-yyyymmdd
-		# %Y%M%D2-%Y%M%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),character(0),YMDYMD_to_str)
-
-		pack$level = 410 #yyyymmdd-mmdd
-		# %Y%M%D2-%M%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),character(0),YMDYMD_to_str)
-
-		pack$level = 420 #yyyymmdd-dd
-		# %Y%M%D2-%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),character(0),YMDYMD_to_str)
-	}
-
-	# YYYY.MM.DD
-	pack$level = 1100
-	# %Y.%M.%D
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
-	# %Y@%M@%D@
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
-	# %Y_%Me_%De
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3),c("Me","De"),YMD_to_str)
-	# %De_%Me_%Y
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1),c("Me","De"),YMD_to_str)
-	# %Me_%De_%Y
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,2),c("Me","De"),YMD_to_str)
-	if(use.jpera){
-		# %Yj.%M.%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
-		# %Yj@%M@%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
-		# %YJ@%M@%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3),c("Yj"),YMD_to_str)
-	}
-
-
-	pack$level = 1110 #dd.mm.yyyy
-	# %D.%M.%Y
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,2,1),character(0),YMD_to_str)
-
-	pack$level = 1400 #yyyymmdd
-	# %Y%M%D2
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3),character(0),YMD_to_str)
-
-	pack$level = 2000 #yy.mm.dd-yy.mm.dd
-	# %Y2.%M.%D-%Y2.%M.%D
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Y2"),YMDYMD_to_str)
-
-	pack$level = 2010 #yy.mm.dd-mm.dd
-	# %Y2.%M.%D-%M.%D
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Y2"),YMDYMD_to_str)
-
-	pack$level = 2020 #yy.mm.dd-dd
-	# %Y2.%M.%D-%D
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Y2"),YMDYMD_to_str)
-
-	pack$level = 2100 #yy.mm.dd
-	# %Y2.%M.%D
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Y2"),YMD_to_str)
-
-	if(use.range){
-		pack$level = 3000 #yyyy.mm-yyyy.mm
-		# %Y.%M-%Y.%M
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
-		# %Y@%M@-%Y@%M@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
-		# %Y_%Me-%Y_%Me
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2,3,4),c("Me","-D"),YMDYMD_to_str)
-		# %Me_%Y-%Me_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1,4,3),c("Me","-D"),YMDYMD_to_str)
-		if(use.jpera){
-			# %Yj.%M-%Yj.%M
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
-			# %Yj@%M@-%Yj@%M@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
-			# %YJ@%M@-%YJ@%M@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,3,4),c("Yj","-D"),YMDYMD_to_str)
+		pack$level = 3100 #yyyy.mm
+		# %Y.%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+		# %Y@%M@
+		if(use.jpyear){
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
 		}
-		pack$level = 3010
-		# %M.%Y-%M.%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1,4,3),c("-D"),YMDYMD_to_str)
-		pack$level = 3020 #yyyy.mm-yyyy.mm
-		# %Y.%M-%M
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
-		# %Y@%M@-%M@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
-		# %Y_%Me-%Me
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2,1,3),c("Me","-D"),YMDYMD_to_str)
-		# %Me_%Me_%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,3,2),c("Me","-D"),YMDYMD_to_str)
-		if(use.jpera){
-			# %Yj.%M-%M
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
-			# %Yj@%M@-%M@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
-			# %YJ@%M@-%M@
-			pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708[~&]([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2,1,3),c("Yj","-D"),YMDYMD_to_str)
+		if(use.enmonth){
+			# %Y_%Me
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2),c("Me","-D"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			# %Me_%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1),c("Me","-D"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
 		}
-		pack$level = 3030
-		# %M-%M.%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(3,1,3,2),c("-D"),YMDYMD_to_str)
+		if(use.jpera){
+			# %Yj.%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+			if(use.jpyear){
+				# %Yj@%M@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+				# %YJ@%M@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
+				if(pack$level==pack$ans_level)return(pack$ans)
+			}
+		}
+
+		pack$level = 3110
+		# %M.%Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1),c("-D"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		if(use.range){
+			pack$level = 4000 #yymmdd-yymmdd or yyyymm-yyyymm
+			# %Y2%M2%D2-%Y2%M2%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Y2"),YMDYMD_to_str)
+			# %Y%M2-%Y%M2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])[~&]([0-2x][0-9x]{3})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 4010 #yymmdd-mmdd or yyyymm-yyyymm
+			# %Y2%M2%D2-%M2%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Y2"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 4020 #yymmdd-dd or yyyymm-mm
+			# %Y2%M2%D2-%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Y2"),YMDYMD_to_str)
+			# %Y%M2-%M2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])[~&]([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+		pack$level = 4100 #yymmdd
+		# %Y2%M2%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Y2"),YMD_to_str)
+		# %Y%M2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		if(use.range){
+			pack$level = 5000 #yyyy.mm-yyyy.mm
+			if(use.jpyear){
+				# %M@%D@-%M@%D@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
+			}
+			# %Me_%De-%Me_%De
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,4),c("Me","De","-Y"),YMDYMD_to_str)
+			# %De_%Me-%De_%Me
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(2,1,4,3),c("Me","De","-Y"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 5020 #yyyy.mm-yyyy.mm
+			if(use.jpyear){
+				# %M@%D@?-%D@
+				pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
+			}
+			# %Me_%De-%De
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,1,3),c("Me","De","-Y"),YMDYMD_to_str)
+			# %De-%De_%Me
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(3,1,3,2),c("Me","De","-Y"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+
+		pack$level = 5100 #yyyy.mm
+		if(use.jpyear){
+			# %M@%D@
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
+		}
+		if(use.enmonth){
+			# %De_%Me
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(2,1),c("Me","De","-Y"),YMD_to_str)
+			# %Me_%De
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2),c("Me","De","-Y"),YMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+		if(use.range){
+			pack$level = 5200 #yy.mm-yy.mm or mm.dd-mm.dd
+			# %Y2.%M-%Y2.%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Y2","-D"),YMDYMD_to_str)
+			# %M.%D-%M.%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
+			# %Y2.%M-%M
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Y2","-D"),YMDYMD_to_str)
+			# %M.%D-%D
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+		pack$level = 5300 #yy.mm or mm.dd
+		# %Y2.%M
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("Y2","-D"),YMD_to_str)
+		# %M.%D
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		if(use.range){
+			pack$level = 6000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
+			# %Y-%Y
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[~&]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(1,2),c("-MD"),YMDYMD_to_str)
+			# %M%D2-%M%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 6020 #yymmdd-dd or yyyymm-mm
+			# %M%D2-%D2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+		pack$level = 6100 #yymmdd
+		# %Y
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(1),c("-MD"),YMD_to_str)
+		# %M%D2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		if(use.range){
+			pack$level = 7000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
+			# %Y2%M2-%Y2%M2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])[~&]([0-9x]{2})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Y2","-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+
+			pack$level = 7020 #yymmdd-dd or yyyymm-mm
+			# %Y2%M2-%M2
+			pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])[~&]([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Y2","-D"),YMDYMD_to_str)
+			if(pack$level==pack$ans_level)return(pack$ans)
+		}
+		pack$level = 7100 #yymmdd
+		# %Y2%M2
+		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("Y2","-D"),YMD_to_str)
+		if(pack$level==pack$ans_level)return(pack$ans)
+
+		#try excel
+		pack$level = 10000 #excel date value
+		if(use.exceldate){
+			exceldate.beg = as.integer(Date.beg-exceldate.origin)
+			exceldate.end = as.integer(Date.end-exceldate.origin)
+
+			dateval = pack$datestr %>% as.integer() %>% suppressWarnings()
+			cand = dplyr::if_else(exceldate.beg<= dateval & dateval <=exceldate.end,strftime(exceldate.origin+dateval,"%Y.%m.%d"),NA_character_)
+			pos = !is.na(cand)&pack$ans_level>=pack$level
+			pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
+			pack$ans_level[pos] = pack$level
+		}
+
+		return(pack$ans)
 	}
-
-	pack$level = 3100 #yyyy.mm
-	# %Y.%M
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
-	# %Y@%M@
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
-	# %Y_%Me
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(1,2),c("Me","-D"),YMD_to_str)
-	# %Me_%Y
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1),c("Me","-D"),YMD_to_str)
-	if(use.jpera){
-		# %Yj.%M
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
-		# %Yj@%M@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([mtshr][0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
-		# %YJ@%M@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])((?:\u660e\u6cbb|\u5927\u6b63|\u662d\u548c|\u5e73\u6210|\u4ee4\u548c)[0-6x]?[0-9x])\u5e74([0-2x]?[0-9x])\u6708(?:$|[^a-z0-9])",c(1,2),c("Yj","-D"),YMD_to_str)
-	}
-	pack$level = 3110
-	# %M.%Y
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(2,1),c("-D"),YMD_to_str)
-
-	if(use.range){
-		pack$level = 4000 #yymmdd-yymmdd or yyyymm-yyyymm
-		# %Y2%M2%D2-%Y2%M2%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4,5,6),c("Y2"),YMDYMD_to_str)
-		# %Y%M2-%Y%M2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])[~&]([0-2x][0-9x]{3})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-D"),YMDYMD_to_str)
-
-		pack$level = 4010 #yymmdd-mmdd or yyyymm-yyyymm
-		# %Y2%M2%D2-%M2%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,4,5),c("Y2"),YMDYMD_to_str)
-
-		pack$level = 4020 #yymmdd-dd or yyyymm-mm
-		# %Y2%M2%D2-%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])[~&]([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,1,2,4),c("Y2"),YMDYMD_to_str)
-		# %Y%M2-%M2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])[~&]([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-D"),YMDYMD_to_str)
-	}
-	pack$level = 4100 #yymmdd
-	# %Y2%M2%D2
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3),c("Y2"),YMD_to_str)
-	# %Y%M2
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("-D"),YMD_to_str)
-
-	if(use.range){
-		pack$level = 5000 #yyyy.mm-yyyy.mm
-		# %M@%D@-%M@%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5[~&]([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
-		# %Me_%De-%Me_%De
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,3,4),c("Me","De","-Y"),YMDYMD_to_str)
-		# %De_%Me-%De_%Me
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(2,1,4,3),c("Me","De","-Y"),YMDYMD_to_str)
-
-		pack$level = 5020 #yyyy.mm-yyyy.mm
-		# %M@%D@?-%D@
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5?[~&]([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
-		# %Me_%De-%De
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2,1,3),c("Me","De","-Y"),YMDYMD_to_str)
-		# %De-%De_%Me
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[~&]([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(3,1,3,2),c("Me","De","-Y"),YMDYMD_to_str)
-	}
-
-	pack$level = 5100 #yyyy.mm
-	# %M@%D@
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])\u6708([0-3x]?[0-9x])\u65e5(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
-	# %De_%Me
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-3x]?[0-9x](?:th|nd|rd)?)[\\s\\.,]*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:$|[^a-z0-9])",c(2,1),c("Me","De","-Y"),YMD_to_str)
-	# %Me_%De
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\\s\\.,]*([0-3x]?[0-9x](?:th|nd|rd)?)(?:$|[^a-z0-9])",c(1,2),c("Me","De","-Y"),YMD_to_str)
-
-	if(use.range){
-		pack$level = 5200 #yy.mm-yy.mm or mm.dd-mm.dd
-		# %Y2.%M-%Y2.%M
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Y2","-D"),YMDYMD_to_str)
-		# %M.%D-%M.%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
-		# %Y2.%M-%M
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])[~&]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Y2","-D"),YMDYMD_to_str)
-		# %M.%D-%D
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])[~&]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
-	}
-	pack$level = 5300 #yy.mm or mm.dd
-	# %Y2.%M
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})[\\.\\-\\s]([0-2x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("Y2","-D"),YMD_to_str)
-	# %M.%D
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])[\\.\\-\\s]([0-3x]?[0-9x])(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
-
-	if(use.range){
-		pack$level = 6000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
-		# %Y-%Y
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})[~&]([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(1,2),c("-MD"),YMDYMD_to_str)
-		# %M%D2-%M%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("-Y"),YMDYMD_to_str)
-
-		pack$level = 6020 #yymmdd-dd or yyyymm-mm
-		# %M%D2-%D2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])[~&]([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("-Y"),YMDYMD_to_str)
-	}
-	pack$level = 6100 #yymmdd
-	# %Y
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x][0-9x]{3})(?:$|[^a-z0-9])",c(1),c("-MD"),YMD_to_str)
-	# %M%D2
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-2x]?[0-9x])([0-3x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("-Y"),YMD_to_str)
-
-	if(use.range){
-		pack$level = 7000 #yyyy-yyyy or yymm-yymm or mmdd-mmdd
-		# %Y2%M2-%Y2%M2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])[~&]([0-9x]{2})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,3,4),c("Y2","-D"),YMDYMD_to_str)
-
-		pack$level = 7020 #yymmdd-dd or yyyymm-mm
-		# %Y2%M2-%M2
-		pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])[~&]([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2,1,3),c("Y2","-D"),YMDYMD_to_str)
-	}
-	pack$level = 7100 #yymmdd
-	# %Y2%M2
-	pack = try_pattern(pack,"(?:^|[^a-z0-9])([0-9x]{2})([0-2x][0-9x])(?:$|[^a-z0-9])",c(1,2),c("Y2","-D"),YMD_to_str)
-
-	#try excel
-	pack$level = 10000 #excel date value
-	if(use.exceldate){
-		exceldate.beg = as.integer(Date.beg-exceldate.origin)
-		exceldate.end = as.integer(Date.end-exceldate.origin)
-
-		dateval = pack$datestr %>% as.integer() %>% suppressWarnings()
-		cand = dplyr::if_else(exceldate.beg<= dateval & dateval <=exceldate.end,strftime(exceldate.origin+dateval,"%Y.%m.%d"),NA_character_)
-		pos = !is.na(cand)&pack$ans_level>=pack$level
-		pack$ans[pos] = dplyr::if_else(pack$ans_level[pos]==pack$level,NA_character_,cand[pos])
-		pack$ans_level[pos] = pack$level
-	}
-
-	return(pack$ans)
+	purrr::map_chr(datestr,datestr_format_full_each,Date.beg,Date.end,strict,use.range,use.jpera,use.exceldate,exceldate.origin)
 }
 
 #' transform string to ymd data table.
