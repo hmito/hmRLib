@@ -130,7 +130,7 @@ str_similar_pair = function(string,similarity=3, only_sub = FALSE){
 	row = matrix(1:length(string),length(string),length(string))
 	pair = cbind(t(row)[dist],row[dist])
 	pair = pair[pair[,1]<pair[,2],]
-	return(pair)
+	return(matrix(pair,ncol=2))
 }
 
 #' Wherher the given string appear first time in the given string vector
