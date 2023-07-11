@@ -181,6 +181,6 @@ cache = function(expr,path,expire=NULL,required_ver=NULL){
 	}
 
 	rds = list(dat = expr, time=now, ver=required_ver)
-	if(length(path)>0)saveRDS(rds,path)
+	if(length(path)>0)saveRDS(rds,path,compress = FALSE)
 	return(rds$dat)
 }
