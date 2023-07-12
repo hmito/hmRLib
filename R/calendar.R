@@ -843,6 +843,8 @@ datestr_format_full = function(datestr, Date.beg = NULL, Date.end = NULL, strict
 		use.enmonth = stringr::str_detect(pack$datestr,"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)")
 		use.range = use.range && stringr::str_detect(pack$datestr,"[~&]")
 
+		if(is.na(pack$datestr))return(pack$ans)
+
 		#range detect mode
 		if(use.range){
 			pack$level = 100 #YYYY.M.D-YYYY.M.D
