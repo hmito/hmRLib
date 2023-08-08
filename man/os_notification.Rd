@@ -15,5 +15,5 @@ os_notification(from, message)
 system call result.
 }
 \description{
-Output characters as toast. Available only on Windows.
+Output characters as toast. Available only on Windows. or Mac
 }

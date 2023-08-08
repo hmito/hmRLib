@@ -27,7 +27,7 @@ is_on_linux = function(){
 }
 
 #' Throw toast as the OS notification
-#' @description Output characters as toast. Available only on Windows.
+#' @description Output characters as toast. Available only on Windows. or Mac
 #' @param from Notifying app name
 #' @param message Notifying message
 #' @return system call result.
@@ -38,6 +38,15 @@ os_notification = function(from,message){
 		system(
 			sprintf(
 				"powershell &{$m=\\\"%s\\\";$a='%s';$t=[Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType,Windows.UI.Notifications,ContentType=WindowsRuntime]::ToastText01);$t.GetElementsByTagName('text').Item(0).InnerText=$m;[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($a).Show($t);}",
+				message,
+				from
+			)
+		)
+	}else if(get_os_name()=="Darwin"){
+		message = gsub("\n"," ",message)
+		system(
+			sprintf(
+				'osascript -e \'display notification "%s" with title "%s"\'',
 				message,
 				from
 			)
