@@ -2,21 +2,21 @@
 % Please edit documentation in R/exception.R
 \name{try_either}
 \alias{try_either}
-\title{Try excute function which might throw exception and return alternative value if it has been thrown.}
+\title{Try and catch_either.}
 \usage{
-try_either(expr, alt_value = NULL, silent = TRUE, catch = NULL)
+try_either(expr, alt_value, silent = TRUE, catchfn = NULL)
 }
 \arguments{
-\item{expr}{Function which should be excuted.}
+\item{expr}{Function which should be executed.}
 
 \item{alt_value}{return value when expr throw exception.}
 
 \item{silent}{Logical value: if TRUE, the error message is not shown.}
 
-\item{catch}{Function which will be called when expr throw exception with error message as argument.}
+\item{catchfn}{Function which will be called when expr throw exception with error message as argument.}
 }
 \description{
-Try excute function which might throw exception.
+Try and catch_either.
 }
 \examples{
 f = function(i){

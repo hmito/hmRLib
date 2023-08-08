@@ -120,12 +120,56 @@ try_catch = function(expr, silent=TRUE){
 	return(ans)
 }
 
-#' Try excute function which might throw exception and return alternative value if it has been thrown.
-#' @description Try excute function which might throw exception.
-#' @param expr Function which should be excuted.
+#' Try execute function which might throw exception.
+#' @description Try execute function which might throw exception.
+#' @param expr Function which should be executed.
+#' @param silent Logical value: if TRUE, the error message is not shown.
+#' @return return value if expr don't throw, or exception if it throw.
+#' @export
+try = function(expr, silent=TRUE){
+	ans = base::try(eval(expr),silent=silent)
+	if(inherits(ans,"try-error")){
+		stack = callstack_trace()
+		ans = paste0(ans[1],callstack_message(">>> call stack",stack))
+		class(ans)="exception"
+	}
+	return(ans)
+}
+
+#' Catch and execute function.
+#' @description Try execute function which might throw exception.
+#' @param value Value which might be exception.
+#' @param catchfn Function which will be called when expr throw exception with error message as argument.
+#' @return return value if expr don't throw, or exception if it throw.
+#' @export
+catch = function(value, catchfn){
+	if(inherits(value,"exception")){
+		catchfn(value)
+	}
+	return(invisible(value))
+}
+
+#' Try excute function which might throw exception.
+#' @description Try execute function which might throw exception.
+#' @param value Value which might be exception.
+#' @param alt_value return value when expr throw exception.
+#' @param catchfn Function which will be called when expr throw exception with error message as argument.
+#' @return return value if expr don't throw, or exception if it throw.
+#' @export
+catch_either = function(value, alt_value, catchfn){
+	if(inherits(value,"exception")){
+		catchfn(value)
+		value=alt_value
+	}
+	return(invisible(value))
+}
+
+#' Try and catch_either.
+#' @description Try and catch_either.
+#' @param expr Function which should be executed.
 #' @param alt_value return value when expr throw exception.
 #' @param silent Logical value: if TRUE, the error message is not shown.
-#' @param catch Function which will be called when expr throw exception with error message as argument.
+#' @param catchfn Function which will be called when expr throw exception with error message as argument.
 #' @examples
 #' f = function(i){
 #'    if(i<0)stop("negative value")
@@ -138,14 +182,14 @@ try_catch = function(expr, silent=TRUE){
 #' b = try_either(f(-1),0)
 #' #b == 0
 #' @export
-try_either = function(expr,alt_value=NULL,silent=TRUE,catch=NULL){
+try_either = function(expr,alt_value,silent=TRUE,catchfn=NULL){
 	ans = try(eval(expr),silent=silent)
 	if(inherits(ans,"try-error")){
-		if(!is.null(catch)){
+		if(!is.null(catchfn)){
 			stack = callstack_trace()
 			message = paste0(ans[1],callstack_message(">>> call stack",stack))
 			class(message)="exception"
-			catch(message)
+			catchfn(message)
 		}
 		ans=alt_value
 	}

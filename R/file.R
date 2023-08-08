@@ -80,6 +80,9 @@ file.is_abspath = function(filepath){
 #' @return absolute file path
 #' @export
 file.abspath = function(filepath,filedir,strict=TRUE){
+	filepath = stringr::str_replace_all(filepath,"\\\\","/")
+	filedir = stringr::str_replace_all(filedir,"\\\\","/")
+
 	filepath = stringr::str_replace_all(filepath,"(^|[^\\.])(\\./)+","\\1")
 	abspath = dplyr::if_else(
 		file.is_abspath(filepath),

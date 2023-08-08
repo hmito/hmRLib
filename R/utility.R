@@ -48,9 +48,13 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head," ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				out.file <- file(outpath, open = "a")
-				writeLines(msg, out.file)
-				close(out.file)
+				hmRLib::try({
+					out.file <- file(outpath, open = "a")
+					writeLines(msg, out.file)
+					close(out.file)
+				}) |> hmRLib::catch(function(excp){
+					hmRLib::throw(excp)
+				})
 			}
 			if(!silent){
 				cat(paste0(msg,"\n"))
@@ -71,14 +75,22 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head,"<W> ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				out.file <- file(outpath, open = "a")
-				writeLines(msg, out.file)
-				close(out.file)
+				hmRLib::try({
+					out.file <- file(outpath, open = "a")
+					writeLines(msg, out.file)
+					close(out.file)
+				}) |> hmRLib::catch(function(excp){
+					hmRLib::throw(excp)
+				})
 			}
 			if(!is.null(errpath)){
-				out.file <- file(errpath, open = "a")
-				writeLines(msg, out.file)
-				close(out.file)
+				hmRLib::try({
+					out.file <- file(errpath, open = "a")
+					writeLines(msg, out.file)
+					close(out.file)
+				}) |> hmRLib::catch(function(excp){
+					hmRLib::throw(excp)
+				})
 			}
 			if(!silent){
 				base::warning(msg,call.=FALSE,immediate. = TRUE)
@@ -99,14 +111,22 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head,"<E> ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				out.file <- file(outpath, open = "a")
-				writeLines(msg, out.file)
-				close(out.file)
+				hmRLib::try({
+					out.file <- file(outpath, open = "a")
+					writeLines(msg, out.file)
+					close(out.file)
+				}) |> hmRLib::catch(function(excp){
+					hmRLib::throw(excp)
+				})
 			}
 			if(!is.null(errpath)){
-				out.file <- file(errpath, open = "a")
-				writeLines(msg, out.file)
-				close(out.file)
+				hmRLib::try({
+					out.file <- file(errpath, open = "a")
+					writeLines(msg, out.file)
+					close(out.file)
+				}) |> hmRLib::catch(function(excp){
+					hmRLib::throw(excp)
+				})
 			}
 			hmRLib::throw(msg, IgnoreThrower=TRUE)
 		}
