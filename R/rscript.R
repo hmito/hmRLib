@@ -26,6 +26,27 @@ is_on_linux = function(){
 #	return(substr(getwd(),1,1)=="/")
 }
 
+#' Throw toast as the OS notification
+#' @description Output characters as toast. Available only on Windows.
+#' @param from Notifying app name
+#' @param message Notifying message
+#' @return system call result.
+#' @export
+os_notification = function(from,message){
+	if(get_os_name()=="Windows"){
+		message = gsub("\n","`n",message)
+		system(
+			sprintf(
+				"powershell &{$m=\\\"%s\\\";$a='%s';$t=[Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType,Windows.UI.Notifications,ContentType=WindowsRuntime]::ToastText01);$t.GetElementsByTagName('text').Item(0).InnerText=$m;[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($a).Show($t);}",
+				message,
+				from
+			)
+		)
+	}else{
+		warning("hmRLib::os_notification can be called only on Windows.")
+	}
+}
+
 #' Return the raw file path based on the OS path system.
 #' @param path Path for path translation
 #' @return path with replace the path separator if it is required.
