@@ -4,24 +4,21 @@
 \alias{source_rscript}
 \title{read and run R script code from a file, with changing directory.}
 \usage{
-source_rscript(
-  file,
-  args = NULL,
-  local = parent.env(.GlobalEnv),
-  ...,
-  chdir = TRUE
-)
+source_rscript(file, args = NULL, local = TRUE, ..., chdir = TRUE)
 }
 \arguments{
 \item{file}{file name}
 
 \item{args}{set Rscript arguments}
 
-\item{local}{local environment; default is baseenv}
+\item{local}{local environment; default is current environment}
 
 \item{...}{argument for source}
 
 \item{chdir}{change dir}
+}
+\value{
+invisible evaluated environment
 }
 \description{
 read and run R script code from a file, with changing directory.

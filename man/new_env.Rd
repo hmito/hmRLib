@@ -4,7 +4,7 @@
 \alias{new_env}
 \title{generate new environment with arglist.}
 \usage{
-new_env(env, arglist = NULL)
+new_env(env = .GlobalEnv, arglist = NULL)
 }
 \arguments{
 \item{env}{parent environment}

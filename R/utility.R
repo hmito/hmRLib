@@ -4,27 +4,29 @@
 #' @param arglist argument list; argument without name is ignored.
 #' @return environment
 #' @export
-new_env = function(env, arglist = NULL){
+new_env = function(env=.GlobalEnv, arglist = NULL){
 	this.env = new.env(parent = env)
 
-	namelist = names(arglist)
-	for(i in 1:length(arglist)){
-		if(namelist[i]=="")next
+	if(length(arglist)>0){
+		namelist = names(arglist)
+		for(i in 1:length(arglist)){
+			if(namelist[i]=="")next
 
-		assign(namelist[i],arglist[[i]],this.env)
+			assign(namelist[i],arglist[[i]],this.env)
+		}
 	}
 
 	return(this.env)
 }
 
 #' read R code from a file, with changing directory.
-#' @description read R code from a file, with changing directory.
+#' @description Same with default source except: 1. local is TRUE in default, 2. chdir is TRUE in default.
 #' @param file file name
 #' @param local local environment; default is current environment
 #' @param ... argument for source
 #' @param chdir change dir
 #' @export
-source_r = function(file, local = parent.frame(), ..., chdir=TRUE){
+source_r = function(file, local = TRUE, ..., chdir=TRUE){
 	source(file,local=local,...,chdir=chdir)
 }
 
@@ -32,26 +34,48 @@ source_r = function(file, local = parent.frame(), ..., chdir=TRUE){
 #' @description read and run R script code from a file, with changing directory.
 #' @param file file name
 #' @param args set Rscript arguments
-#' @param local local environment; default is baseenv
+#' @param local local environment; default is current environment
 #' @param ... argument for source
 #' @param chdir change dir
+#' @return invisible evaluated environment
 #' @export
-source_rscript = function(file, args = NULL, local = parent.env(.GlobalEnv), ..., chdir=TRUE){
+source_rscript = function(file, args = NULL, local = TRUE, ..., chdir=TRUE){
 	if(is.logical(local)){
 		if(local){
-			local = .GlobalEnv
-		}else{
 			local = parent.frame()
+		}else{
+			local = .GlobalEnv
 		}
 	}else if(!is.environment(local)){
 		stop("'local' must be TRUE, FALSE or an environment")
 	}
 	argenv = new_env(local,list(
 		commandArgs = function(trailingOnly=FALSE){
-			return(c(utils::head(base::commandArgs(FALSE),length(base::commandArgs(FALSE))-length(base::commandArgs(TRUE))),args))
+			if(trailingOnly)return(args)
+			else return(c(utils::head(base::commandArgs(FALSE),length(base::commandArgs(FALSE))-length(base::commandArgs(TRUE))),args))
 		}
 	))
 	source(file,local=argenv,chdir=chdir)
+	return(invisible(argenv))
+}
+
+#' reload all packages which have been loaded in any environment.
+#' @description reload all packages which have been loaded in any environment.
+#' @param env target environment
+#' @export
+reload_package = function(env = parent.env()){
+	if(identical(env,.GlobalEnv))return()
+	if(env|>environmentName() %in% search())return()
+
+	while(!identical(env,emptyenv())){
+		parent = parent.env(env)
+		if(parent|>environmentName() %in% search()){
+			if(identical(parent,.GlobalEnv))return()
+			parent.env(env) = parent.env(.GlobalEnv)
+			return()
+		}
+		env = parent
+	}
 }
 
 #' create output function list.
