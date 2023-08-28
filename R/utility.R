@@ -27,6 +27,15 @@ new_env = function(env=.GlobalEnv, arglist = NULL){
 #' @param chdir change dir
 #' @export
 source_r = function(file, local = TRUE, ..., chdir=TRUE){
+	if(is.logical(local)){
+		if(local){
+			local = parent.frame()
+		}else{
+			local = .GlobalEnv
+		}
+	}else if(!is.environment(local)){
+		stop("'local' must be TRUE, FALSE or an environment")
+	}
 	source(file,local=local,...,chdir=chdir)
 }
 
