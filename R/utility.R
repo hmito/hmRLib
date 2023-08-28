@@ -1,25 +1,57 @@
-#' load package with trying package install when it is not found.
-#' @description Try load package by require. If the package does not exist, install.package or install_github is tried.
-#' @param pck character of package name
-#' @param location if location is "github.com/xxx", the package is installed from github.com
-#' @return True: found and loaded, False: fail to load
-#' @importFrom utils install.packages
-#' @importFrom devtools install_github
+#' generate new environment with arglist.
+#' @description generate new environment from parent with arglist which are assigned with those names.
+#' @param env parent environment
+#' @param arglist argument list; argument without name is ignored.
+#' @return environment
 #' @export
-strong_require = function(pck, location=NULL){
-	#try package load
-	if(require(pck,character.only = TRUE))return(TRUE)
+new_env = function(env, arglist = NULL){
+	this.env = new.env(parent = env)
 
-	#try install.packages
-	if(is.null(location)){
-		install.packages(pck)
-	}else if(grep("^github.com/[^/]+$",location)){
-		strong_require("devtools")
-		pos = gsub("^github.com/([^/]+)$","\\1",location)
-		devtools::install_github(paste0(pos,"/",pck))
+	namelist = names(arglist)
+	for(i in 1:length(arglist)){
+		if(namelist[i]=="")next
+
+		assign(namelist[i],arglist[[i]],this.env)
 	}
 
-	return(require(pck,character.only = TRUE))
+	return(this.env)
+}
+
+#' read R code from a file, with changing directory.
+#' @description read R code from a file, with changing directory.
+#' @param file file name
+#' @param local local environment; default is current environment
+#' @param ... argument for source
+#' @param chdir change dir
+#' @export
+source_r = function(file, local = parent.frame(), ..., chdir=TRUE){
+	source(file,local=local,...,chdir=chdir)
+}
+
+#' read and run R script code from a file, with changing directory.
+#' @description read and run R script code from a file, with changing directory.
+#' @param file file name
+#' @param args set Rscript arguments
+#' @param local local environment; default is baseenv
+#' @param ... argument for source
+#' @param chdir change dir
+#' @export
+source_rscript = function(file, args = NULL, local = parent.env(.GlobalEnv), ..., chdir=TRUE){
+	if(is.logical(local)){
+		if(local){
+			local = .GlobalEnv
+		}else{
+			local = parent.frame()
+		}
+	}else if(!is.environment(local)){
+		stop("'local' must be TRUE, FALSE or an environment")
+	}
+	argenv = new_env(local,list(
+		commandArgs = function(trailingOnly=FALSE){
+			return(c(utils::head(base::commandArgs(FALSE),length(base::commandArgs(FALSE))-length(base::commandArgs(TRUE))),args))
+		}
+	))
+	source(file,local=argenv,chdir=chdir)
 }
 
 #' create output function list.
@@ -48,7 +80,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head," ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				hmRLib::try({
+				hmRLib::try_log({
 					out.file <- file(outpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -75,7 +107,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head,"<W> ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				hmRLib::try({
+				hmRLib::try_log({
 					out.file <- file(outpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -84,7 +116,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				})
 			}
 			if(!is.null(errpath)){
-				hmRLib::try({
+				hmRLib::try_log({
 					out.file <- file(errpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -111,7 +143,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head,"<E> ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				hmRLib::try({
+				hmRLib::try_log({
 					out.file <- file(outpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -120,7 +152,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				})
 			}
 			if(!is.null(errpath)){
-				hmRLib::try({
+				hmRLib::try_log({
 					out.file <- file(errpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)

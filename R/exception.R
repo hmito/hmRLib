@@ -82,6 +82,23 @@ callstack_message = function(message,stack){
 	return(message)
 }
 
+#' Show callstack info at last error
+#' @description print callstack info when the last error occured.
+#' @export
+show_callstack_trace=function(){
+	stack = callstack_trace()
+	cat(callstack_message(">>> call stack",stack))
+}
+
+#' Check whether the argument is exception
+#' @description Check whether the argument is exception
+#' @param arg target argument.
+#' @return Logical; TRUE:exception, FALSE: otherwise.
+#' @export
+is_exception=function(arg){
+	inherits(arg,"try-error")
+}
+
 #' Throw exception
 #' @description Throw exception with message.
 #' @param message message of exception
@@ -111,11 +128,11 @@ assert=function(condition,message="assert error"){
 #' @return return value if expr don't throw, or exception if it throw.
 #' @export
 try_catch = function(expr, silent=TRUE){
-	ans = try(eval(expr),silent=silent)
+	ans = base::try(eval(expr),silent=silent)
 	if(inherits(ans,"try-error")){
 		stack = callstack_trace()
 		ans = paste0(ans[1],callstack_message(">>> call stack",stack))
-		class(ans)="exception"
+		class(ans)="try-error"
 	}
 	return(ans)
 }
@@ -126,12 +143,12 @@ try_catch = function(expr, silent=TRUE){
 #' @param silent Logical value: if TRUE, the error message is not shown.
 #' @return return value if expr don't throw, or exception if it throw.
 #' @export
-try = function(expr, silent=TRUE){
+try_log = function(expr, silent=TRUE){
 	ans = base::try(eval(expr),silent=silent)
 	if(inherits(ans,"try-error")){
 		stack = callstack_trace()
 		ans = paste0(ans[1],callstack_message(">>> call stack",stack))
-		class(ans)="exception"
+		class(ans)="try-error"
 	}
 	return(ans)
 }
@@ -143,7 +160,7 @@ try = function(expr, silent=TRUE){
 #' @return return value if expr don't throw, or exception if it throw.
 #' @export
 catch = function(value, catchfn){
-	if(inherits(value,"exception")){
+	if(inherits(value,"try-error")){
 		catchfn(value)
 	}
 	return(invisible(value))
@@ -157,7 +174,7 @@ catch = function(value, catchfn){
 #' @return return value if expr don't throw, or exception if it throw.
 #' @export
 catch_either = function(value, alt_value, catchfn){
-	if(inherits(value,"exception")){
+	if(inherits(value,"try-error")){
 		catchfn(value)
 		value=alt_value
 	}
@@ -175,20 +192,20 @@ catch_either = function(value, alt_value, catchfn){
 #'    if(i<0)stop("negative value")
 #'    return(i)
 #' }
-#' x = try_either(f(3))
+#' x = try_either(f(3),NULL)
 #' #x == 3
-#' a = try_either(f(-1))
+#' a = try_either(f(-1),NULL)
 #' #a == NULL
 #' b = try_either(f(-1),0)
 #' #b == 0
 #' @export
 try_either = function(expr,alt_value,silent=TRUE,catchfn=NULL){
-	ans = try(eval(expr),silent=silent)
+	ans = base::try(eval(expr),silent=silent)
 	if(inherits(ans,"try-error")){
 		if(!is.null(catchfn)){
 			stack = callstack_trace()
 			message = paste0(ans[1],callstack_message(">>> call stack",stack))
-			class(message)="exception"
+			class(message)="try-error"
 			catchfn(message)
 		}
 		ans=alt_value
@@ -196,10 +213,3 @@ try_either = function(expr,alt_value,silent=TRUE,catchfn=NULL){
 	return(ans)
 }
 
-#' Show callstack info at last error
-#' @description print callstack info when the last error occured.
-#' @export
-show_callstack_trace=function(){
-	stack = callstack_trace()
-	cat(callstack_message(">>> call stack",stack))
-}

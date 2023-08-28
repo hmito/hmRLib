@@ -23,9 +23,9 @@ f = function(i){
    if(i<0)stop("negative value")
    return(i)
 }
-x = try_either(f(3))
+x = try_either(f(3),NULL)
 #x == 3
-a = try_either(f(-1))
+a = try_either(f(-1),NULL)
 #a == NULL
 b = try_either(f(-1),0)
 #b == 0
