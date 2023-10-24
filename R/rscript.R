@@ -147,4 +147,4 @@ start_ownself = function(ownpath, ...){
 #' Check interactive mode.
 #' @return TRUE if the rscript is interactive mode.
 #' @export
-is_interactive = function(){any(commandArgs(FALSE) %in% "--interactive")}
+is_interactive = function(){!any(stringr::str_detect(commandArgs(FALSE),"^--file[=\\s]"))}
