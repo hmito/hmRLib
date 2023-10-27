@@ -230,7 +230,7 @@ catch_either = function(value, alt_value, catchfn=NULL){
 	if(inherits(value,"try-error")){
 		if(!is.null(catchfn)){
 			stack = callstack_trace()
-			message = paste0(ans[1],callstack_message(">>> call stack",stack),warnings_message(">>> warnings"))
+			message = paste0(value[1],callstack_message(">>> call stack",stack),warnings_message(">>> warnings"))
 			class(message)="try-error"
 			catchfn(message)
 		}

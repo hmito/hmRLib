@@ -113,7 +113,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head," ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				hmRLib::try_log({
+				hmRLib::try_({
 					out.file <- file(outpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -140,7 +140,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head,"<W> ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				hmRLib::try_log({
+				hmRLib::try_({
 					out.file <- file(outpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -149,7 +149,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				})
 			}
 			if(!is.null(errpath)){
-				hmRLib::try_log({
+				hmRLib::try_({
 					out.file <- file(errpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -176,7 +176,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				msg = paste0(paste0(head,"<E> ",sprintf(str,...)),collapse="\n")
 			}
 			if(!is.null(outpath)){
-				hmRLib::try_log({
+				hmRLib::try_({
 					out.file <- file(outpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)
@@ -185,7 +185,7 @@ formatted_output = function(outpath=NULL,errpath=NULL,head_format="%Y-%m-%d %H:%
 				})
 			}
 			if(!is.null(errpath)){
-				hmRLib::try_log({
+				hmRLib::try_({
 					out.file <- file(errpath, open = "a")
 					writeLines(msg, out.file)
 					close(out.file)

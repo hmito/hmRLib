@@ -4,7 +4,7 @@
 \alias{catch_either}
 \title{Try excute function which might throw exception.}
 \usage{
-catch_either(value, alt_value, catchfn)
+catch_either(value, alt_value, catchfn = NULL)
 }
 \arguments{
 \item{value}{Value which might be exception.}

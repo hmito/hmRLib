@@ -4,10 +4,12 @@
 \alias{try_catch}
 \title{Try excute function which might throw exception.}
 \usage{
-try_catch(expr, silent = TRUE)
+try_catch(expr, catchfn, silent = TRUE)
 }
 \arguments{
 \item{expr}{Function which should be excuted.}
+
+\item{catchfn}{Function which will be called when expr throw exception with error message as argument.}
 
 \item{silent}{Logical value: if TRUE, the error message is not shown.}
 }

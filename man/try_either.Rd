@@ -4,16 +4,16 @@
 \alias{try_either}
 \title{Try and catch_either.}
 \usage{
-try_either(expr, alt_value, silent = TRUE, catchfn = NULL)
+try_either(expr, alt_value, catchfn = NULL, silent = TRUE)
 }
 \arguments{
 \item{expr}{Function which should be executed.}
 
 \item{alt_value}{return value when expr throw exception.}
 
-\item{silent}{Logical value: if TRUE, the error message is not shown.}
-
 \item{catchfn}{Function which will be called when expr throw exception with error message as argument.}
+
+\item{silent}{Logical value: if TRUE, the error message is not shown.}
 }
 \description{
 Try and catch_either.
