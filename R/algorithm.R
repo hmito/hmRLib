@@ -1,5 +1,26 @@
+#' Return y if x satisfies given condition, otherwise return x
+#' @description Return y if x satisfies given condition, otherwise return x
+#' @param x target value
+#' @param y alternatively returned value
+#' @param condition a function return logical values for each x
+#' @return x or y, whose length is euqal to length_x
+#' @export
+either = function(x,y,condition = is.na){
+	ifelse(condition(x),y,x)
+}
+#' Return y if x does not exist, otherwise return x
+#' @description Return y if x does not exist, otherwise return x
+#' @param x target value
+#' @param y alternatively returned value
+#' @return x or y
+#' @export
+ensure = function(x,y){
+	x  = substitute(x)
+	if(is.null(eval(x)))return(y)
+	return(eval(x))
+}
 #' Return list of index of from which is matched to the argument
-#' @description Find index number in from at which is equal to what.
+#' @description Return list of index of from which is matched to the argument
 #' @param what value of sequence for finding
 #' @param from index of this argument is returned
 #' @param condition condition for finding. Default is "=="

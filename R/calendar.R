@@ -1470,3 +1470,81 @@ datestr_format = function(datestr, dateformat="%Y.%M.%D", range_sep = "-", na.fi
 		)
 	}
 }
+
+#' compare two ymd by less
+#' @description compare two ymd by less
+#' @param ymd1 l.f.s.
+#' @param ymd2 r.h.s.
+#' @return ymd1<ymd2
+#' @export
+ymd_less = function(ymd1, ymd2){
+	#return(ymd1$y < ymd2$y | (ymd1$y==ymd2$y & (ymd1$m < ymd2$m) | (ymd1$m==ymd2$m & ymd1$d < ymd2$d)))
+	ifelse(ymd1$y==ymd2$y,
+			 ifelse(ymd1$m==ymd2$m,
+			 		 ifelse(ymd1$d==ymd2$d, FALSE,ymd1$d<ymd2$d),
+			 		 ymd1$m<ymd2$m),
+			 ymd1$y<ymd2$y)
+}
+#' compare two ymd by equal_or_less
+#' @description compare two ymd by equal_or_less
+#' @param ymd1 l.f.s.
+#' @param ymd2 r.h.s.
+#' @return ymd1<=ymd2
+#' @export
+ymd_eq_less = function(ymd1, ymd2){
+	#return(ymd1$y < ymd2$y | (ymd1$y==ymd2$y & (ymd1$m < ymd2$m) | (ymd1$m==ymd2$m & ymd1$d < ymd2$d)))
+	ifelse(ymd1$y==ymd2$y,
+			 ifelse(ymd1$m==ymd2$m,
+			 		 ifelse(ymd1$d==ymd2$d, TRUE,ymd1$d<ymd2$d),
+			 		 ymd1$m<ymd2$m),
+			 ymd1$y<ymd2$y)
+}
+#' compare two ymd by greater
+#' @description compare two ymd by greater
+#' @param ymd1 l.f.s.
+#' @param ymd2 r.h.s.
+#' @return ymd1>ymd2
+#' @export
+ymd_greater = function(ymd1, ymd2){
+	#return(ymd1$y < ymd2$y | (ymd1$y==ymd2$y & (ymd1$m < ymd2$m) | (ymd1$m==ymd2$m & ymd1$d < ymd2$d)))
+	ifelse(ymd1$y==ymd2$y,
+			 ifelse(ymd1$m==ymd2$m,
+			 		 ifelse(ymd1$d==ymd2$d, FALSE,ymd1$d>ymd2$d),
+			 		 ymd1$m>ymd2$m),
+			 ymd1$y>ymd2$y)
+}
+#' compare two ymd by equal_or_greater
+#' @description compare two ymd by equal_or_greater
+#' @param ymd1 l.f.s.
+#' @param ymd2 r.h.s.
+#' @return ymd1>=ymd2
+#' @export
+ymd_eq_greater = function(ymd1, ymd2){
+	#return(ymd1$y < ymd2$y | (ymd1$y==ymd2$y & (ymd1$m < ymd2$m) | (ymd1$m==ymd2$m & ymd1$d < ymd2$d)))
+	ifelse(ymd1$y==ymd2$y,
+			 ifelse(ymd1$m==ymd2$m,
+			 		 ifelse(ymd1$d==ymd2$d, TRUE,ymd1$d>ymd2$d),
+			 		 ymd1$m>ymd2$m),
+			 ymd1$y>ymd2$y)
+}
+#' compare two ymd by equal
+#' @description compare two ymd by equal
+#' @param ymd1 l.f.s.
+#' @param ymd2 r.h.s.
+#' @return ymd1==ymd2
+#' @export
+ymd_equl = function(ymd1, ymd2){
+	#return(ymd1$y < ymd2$y | (ymd1$y==ymd2$y & (ymd1$m < ymd2$m) | (ymd1$m==ymd2$m & ymd1$d < ymd2$d)))
+	return(ymd1$y==ymd2$y & ymd1$m==ymd2$m & ymd1$d==ymd2$d)
+}
+
+#' check whether given ymd is included in the given range
+#' @description compare two ymd by equal
+#' @param ymd target ymd
+#' @param ymd_begin start of the range
+#' @param ymd_end end of the range
+#' @return ymd_begin <= ymd & ymd < ymd_end
+#' @export
+ymd_include = function(ymd, ymd_from, ymd_to){
+	ymd_eq_less(ymd_from,ymd) & ymd_less(ymd,ymd_to)
+}

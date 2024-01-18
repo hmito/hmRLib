@@ -17,7 +17,7 @@ find_all(what, from, condition = `==`)
 List of index which is found in from at each what
 }
 \description{
-Find index number in from at which is equal to what.
+Return list of index of from which is matched to the argument
 }
 \examples{
 find_all(c(1,3,5), c(0,1,2,3,3))

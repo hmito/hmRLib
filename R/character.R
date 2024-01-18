@@ -1,3 +1,13 @@
+#' Return y if x is NA or empty character, otherwise return x
+#' @description Return y if x is NA, otherwise return x
+#' @param x target value
+#' @param y alternatively returned value
+#' @return x or y, whose length is euqal to length_x
+#' @export
+str_either = function(x,y){
+	ifelse(is.na(x) | x=="",y,x)
+}
+
 #' Replace hankaku-kana by zenkaku-kana
 #' @description Replace hankaku-kana by zenkaku-kana.
 #' @param x target character
@@ -21,6 +31,36 @@ str_kana_to_zen <- function(x){
 #	x <- chartr("ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ｡｢｣､･ｦｧｨｩｪｫｬｭｮｯｰ"
 #					, "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン。「」、・ヲァィゥェォャュョッー"
 #					, x)
+	return(x)
+}
+
+#' Remove daku-on, han-daku-on
+#' @description Remove daku-on, han-daku-on
+#' @param x target character
+#' @return replaced character
+#' @export
+str_remove_dakuten <- function(x){
+	# character変換
+	if (!is.character(x)){ x <- as.character(x) }
+
+	x = stringr::str_remove_all(x,"[\u309b\u309c]")#゛゜
+
+	# 濁点、半濁点文字の置換
+
+	#	from <- c("ゔ","が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ","だ","ぢ","づ","で","ど","ば","び","ぶ","べ","ぼ","ぱ","ぴ","ぷ","ぺ","ぽ")
+	from = c("\u3094","\u304c","\u304e","\u3050","\u3052","\u3054","\u3056","\u3058","\u305a","\u305c","\u305e","\u3060","\u3062","\u3065","\u3067","\u3069","\u3070","\u3073","\u3076","\u3079","\u307c","\u3071","\u3074","\u3077","\u307a","\u307d")
+	#	to   <- c('"う","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","は","ひ","ふ","へ","ほ","は","ひ","ふ","へ","ほ"'
+	to = c("\u3046","\u304b","\u304d","\u304f","\u3051","\u3053","\u3055","\u3057","\u3059","\u305b","\u305d","\u305f","\u3061","\u3064","\u3066","\u3068","\u306f","\u3072","\u3075","\u3078","\u307b","\u306f","\u3072","\u3075","\u3078","\u307b")
+
+	for( i in 1:length(from) ){ x <- gsub(from[i],to[i],x) }
+
+	#	from <- c("ヴ","ガ","ギ","グ","ゲ","ゴ","ザ","ジ","ズ","ゼ","ゾ","ダ","ヂ","ヅ","デ","ド","バ","ビ","ブ","ベ","ボ","パ","ピ","プ","ペ","ポ")
+	from = c("\u30f4","\u30ac","\u30ae","\u30b0","\u30b2","\u30b4","\u30b6","\u30b8","\u30ba","\u30bc","\u30be","\u30c0","\u30c2","\u30c5","\u30c7","\u30c9","\u30d0","\u30d3","\u30d6","\u30d9","\u30dc","\u30d1","\u30d4","\u30d7","\u30da","\u30dd")
+	#	to   <- c("ウ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ハ","ヒ","フ","ヘ","ホ","ハ","ヒ","フ","ヘ","ホ")
+	to = c("\u30a6","\u30ab","\u30ad","\u30af","\u30b1","\u30b3","\u30b5","\u30b7","\u30b9","\u30bb","\u30bd","\u30bf","\u30c1","\u30c4","\u30c6","\u30c8","\u30cf","\u30d2","\u30d5","\u30d8","\u30db","\u30cf","\u30d2","\u30d5","\u30d8","\u30db")
+
+	for( i in 1:length(from) ){ x <- gsub(from[i],to[i],x) }
+
 	return(x)
 }
 
