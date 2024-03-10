@@ -50,7 +50,8 @@ file.replace_ext = function(filepath,ext){
 #' @importFrom stringr str_remove
 #' @export
 file.dir = function(filepath){
-	str_remove(filepath,"[/\\\\]+[^/\\\\]+$")
+	ifelse(stringr::str_detect(filepath,"[/\\\\]"),
+			 str_remove(filepath,"[/\\\\]+[^/\\\\]+$"),".")
 }
 
 #' Get file name with extension

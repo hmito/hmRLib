@@ -1541,8 +1541,8 @@ ymd_equl = function(ymd1, ymd2){
 #' check whether given ymd is included in the given range
 #' @description compare two ymd by equal
 #' @param ymd target ymd
-#' @param ymd_begin start of the range
-#' @param ymd_end end of the range
+#' @param ymd_from start of the range
+#' @param ymd_to end of the range
 #' @return ymd_begin <= ymd & ymd < ymd_end
 #' @export
 ymd_include = function(ymd, ymd_from, ymd_to){
