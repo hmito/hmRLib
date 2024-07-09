@@ -4,14 +4,14 @@
 \alias{file.fout}
 \title{generate file output}
 \usage{
-file.fout(filepath, encoding = getOption("encoding"), raw = FALSE)
+file.fout(filepath, open = "w", encoding = getOption("encoding"))
 }
 \arguments{
 \item{filepath}{file path (character)}
 
-\item{encoding}{encoding}
+\item{open}{open mode}
 
-\item{raw}{raw option}
+\item{encoding}{encoding}
 }
 \value{
 fout function

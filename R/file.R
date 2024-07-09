@@ -144,12 +144,21 @@ file.backup = function(filepath, backup = "bak", backup.dir = NULL,timeformat = 
 #' generate file output
 #' @description Generate file output
 #' @param filepath file path (character)
+#' @param open open mode
 #' @param encoding encoding
-#' @param raw raw option
 #' @return fout function
 #' @export
-file.fout = function(filepath, encoding = getOption("encoding"), raw=FALSE){
-	outfile = file(filepath, open = "w")
+file.fout = function(filepath, open = "w", encoding = getOption("encoding")){
+	if(encoding == "UTF-8-BOM"){
+		outfile = file(filepath, open = open, encoding = "UTF-8")
+		if(open %in% c("rb","wb","ab","r+b","w+b","a+b")){
+			suppressWarnings(writeBin(as.raw(c(0xef, 0xbb, 0xbf)), outfile))
+		}else{
+			suppressWarnings(writeChar("\ufeff", outfile, eos = NULL))
+		}
+	}else{
+		outfile = file(filepath, open = open,encoding = encoding)
+	}
 	function(str, ..., close = FALSE){
 		if(close){
 			close(outfile)
