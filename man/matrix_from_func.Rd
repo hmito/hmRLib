@@ -24,6 +24,7 @@ This function create the matrix from a defined function and two sequences. The u
 \examples{
 x=0:3
 y=0:2
-matrix_from_func(x,y,function(x,y){return(x+y)})
+fn = function(x,y){return(x+y)}
+matrix_from_func(x,y,fn)
 #((0,1,2,3),(1,2,3,4),(2,3,4,5))
 }

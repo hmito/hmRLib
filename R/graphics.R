@@ -217,3 +217,65 @@ limited_lines=function(x,y,limit=NULL,...){
 
   return(length(x[!is.na(x)]))
 }
+
+#' Save plot expression into laster/vector files
+#' @description  Save plot into a figure file with given extension
+#' @param plotexpr plot function or plot expression, which is evaluated "lazily".
+#' @param filename File name. file extension determines the file format.
+#' @param width width of figure in inch.
+#' @param height height of figure in inch.
+#' @param ppi pixel per inchi; used only for raster format.
+#' @param ... arguments for par, e.g., cex or mex.
+#' @importFrom grDevices png
+#' @importFrom grDevices dev.off
+#' @importFrom grDevices tiff
+#' @importFrom grDevices bmp
+#' @importFrom grDevices jpeg
+#' @importFrom grDevices svg
+#' @importFrom grDevices pdf
+#' @importFrom grDevices dev.copy2eps
+#'
+#' @export
+save_plot = function(plotexpr,filename, width = 4.0, height = 3.0, ppi = 300,...){
+	ext = hmRLib::file.ext(filename)
+
+	if(ext == "png"){
+		png(filename,width=width,height=height,units="in",res=ppi)
+		par(...)
+		eval(plotexpr)
+		dev.off()
+	}else if(ext=="tiff"){
+		tiff(filename,width=width,height=height,units="in",res=ppi)
+		par(...)
+		eval(plotexpr)
+		dev.off()
+	}else if(ext=="bmp"){
+		bmp(filename,width=width,height=height,units="in",res=ppi)
+		par(...)
+		eval(plotexpr)
+		dev.off()
+	}else if(ext=="jpg"){
+		jpeg(filename,width=width,height=height,units="in",res=ppi)
+		par(...)
+		eval(plotexpr)
+		dev.off()
+	}else if(ext=="svg"){
+		svg(filename,width=width,height=height)
+		par(...)
+		eval(plotexpr)
+		dev.off()
+	}else if(ext=="pdf"){
+		pdf(filename,width=width,height=height)
+		par(...)
+		eval(plotexpr)
+		dev.off()
+	}else if(ext=="eps"){
+		par(...)
+		eval(plotexpr)
+		dev.copy2eps(filename,width=width,height=height)
+		dev.off()
+	}else{
+		warning(sprintf("fail to finde plot mode \"%s\" in save_plot",ext))
+	}
+	return(plotexpr)
+}
