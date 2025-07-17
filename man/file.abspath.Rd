@@ -2,7 +2,7 @@
 % Please edit documentation in R/file.R
 \name{file.abspath}
 \alias{file.abspath}
-\title{Return absolute path}
+\title{Return absolute path ==BUG EXIST REPLACE BY file.stdpath==}
 \usage{
 file.abspath(filepath, filedir, strict = TRUE)
 }

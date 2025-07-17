@@ -2,7 +2,7 @@
 % Please edit documentation in R/file.R
 \name{file.at}
 \alias{file.at}
-\title{Return function which generate absolute path of the focal directory}
+\title{Return function which generate standardized path of the focal directory}
 \usage{
 file.at(filedir)
 }
@@ -10,8 +10,8 @@ file.at(filedir)
 \item{filedir}{file directory}
 }
 \value{
-function of absolute path generator
+function of standardized path generator
 }
 \description{
-Returned function generates absolute path of the given directory, base_dir.
+Returned function generates standardized path of the given directory, base_dir.
 }

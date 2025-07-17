@@ -70,10 +70,72 @@ file.remove_dir= function(filepath){
 #' @return logical: true if it is absolute path.
 #' @export
 file.is_abspath = function(filepath){
-		return(stringr::str_detect(filepath,"(:|^)/"))
+		return(stringr::str_detect(filepath,"(:|^)/{1,2}"))
 }
 
-#' Return absolute path
+file.path_depth = function(path){
+
+}
+#' Return standardized path
+#' @description Return standardized path from rootpath. head/tail spaces, current directory
+#' @param path target file/dir path (character)
+#' @param rootpath root file/dir path of the target path. if path is absolute path, rootpath is ignored
+#' @param strict logical: TRUE ~ remove unnecessary reference "..", e.g., "a/b/../c".
+#' @param stdroot logical: TRUE ~ skip rootpath standarization
+#' @return standardized path
+#' @export
+file.stdpath = function(path,rootpath=NA_character_,strict=TRUE,stdroot=FALSE){
+	if(!stdroot){
+		rootpath = file.stdpath(rootpath,strict=strict,stdroot=TRUE)
+		#path = paste0(file.stdpath(rootpath),"/",path)
+	}
+	rootpath = rootpath |>
+		stringr::str_replace("([^/])$","\\1/")
+
+	path = path |>
+		stringr::str_remove("^\\s+") |> # remove head spaces
+		stringr::str_remove("\\s+$") |> # remove tail spaces
+		stringr::str_replace_all("\\\\","/") |> # replace backslash separation
+		stringr::str_replace_all("(^|/)\\.(/|$)","\\1") # replace current directory
+
+	len = max(length(path),length(rootpath))
+	path = rep(path,length=len)
+	rootpath = rep(rootpath,length=len)
+
+	rootdepth = rootpath |>
+		stringr::str_remove("(^.+:/+|^/+)") |>
+		stringr::str_replace_all("(^|/)\\.\\.($|/)","\\1//\\2") |>
+		stringr::str_extract("(([^/]+/)+)$") |>
+		stringr::str_count("/")|>
+		tidyr::replace_na(0)
+	remvdepth = path |>
+		stringr::str_extract("^(\\.\\./)+") |>
+		stringr::str_count("\\.\\.") |>
+		tidyr::replace_na(0)
+	depth = ifelse(rootdepth>remvdepth,remvdepth,rootdepth)
+
+	path = ifelse(
+		file.is_abspath(path) | is.na(rootpath),
+		path,
+		stringr::str_c(
+			rootpath |>
+				stringr::str_remove(sprintf("([^/]+/){%d}$",depth)),
+			path |>
+				stringr::str_remove(sprintf("^(\\.\\./){%d}",depth))))
+
+	if(strict){
+		while(any(stringr::str_detect(path,"(?!(/|^)\\.\\./)(/|^)[^/]+/\\.\\.(/|$)"),na.rm = TRUE)){
+			path = stringr::str_replace(path,"(?!(/|^)\\.\\./)(/|^)[^/]+/\\.\\.(/|$)","\\2")
+		}
+		#path = path |> stringr::str_remove("/$") # remove tail slash
+	}
+
+	path = ifelse(path=="","./",path)
+
+	return(path)
+}
+
+#' Return absolute path ==BUG EXIST REPLACE BY file.stdpath==
 #' @description Return logical value which represents whether the given path is absolute path or not.
 #' @param filepath file path (character)
 #' @param filedir file directory
@@ -81,6 +143,7 @@ file.is_abspath = function(filepath){
 #' @return absolute file path
 #' @export
 file.abspath = function(filepath,filedir,strict=TRUE){
+	.Deprecated("file.stdpath")
 	filepath = stringr::str_replace_all(filepath,"\\\\","/")
 	filedir = stringr::str_replace_all(filedir,"\\\\","/")
 
@@ -105,14 +168,16 @@ file.abspath = function(filepath,filedir,strict=TRUE){
 	return(abspath)
 }
 
-#' Return function which generate absolute path of the focal directory
-#' @description Returned function generates absolute path of the given directory, base_dir.
+#' Return function which generate standardized path of the focal directory
+#' @description Returned function generates standardized path of the given directory, base_dir.
 #' @param filedir file directory
-#' @return function of absolute path generator
+#' @return function of standardized path generator
 #' @export
 file.at = function(filedir){
-	function(path,...){
-		file.abspath(sprintf(path,...),filedir)
+	filedir = file.stdpath(filedir)
+	function(...){
+		if(length(list(...))==0)return(filedir)
+		return(file.stdpath(sprintf(...),filedir))
 	}
 }
 
